@@ -1,0 +1,151 @@
+{
+  "phones": [
+    {
+      "id": "demo-max-spec",
+      "model": "iPhone 15 Pro Max Ultimate Demo (All Specs Active)",
+      "ram": "8GB",
+      "storage": "1TB",
+      "price": "99000",
+      "condition": "New",
+      "image": "https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&q=80&w=4096&h=1840",
+      "images": [
+        "https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&q=80&w=4096&h=1840",
+        "https://images.unsplash.com/photo-1696446702085-786d70c91799?auto=format&fit=crop&q=80&w=4096&h=1840",
+        "https://images.unsplash.com/photo-1678911820864-e2c567c655d7?auto=format&fit=crop&q=80&w=4096&h=1840"
+      ],
+      "description": "Овој оглас е додаден за приказ на максималната големина на картичката. Ги содржи сите можни беџови и полиња.",
+      "location": "Скопје",
+      "fmi": "Off",
+      "batteryHealth": 100,
+      "faceId": true,
+      "touchId": true,
+      "trueTone": true,
+      "customNote": "СПЕЦИЈАЛЕН ДЕФЕКТ ПРИКАЗ",
+      "extraFeatures": [
+        "5G",
+        "120Hz",
+        "IP68",
+        "OLED"
+      ],
+      "activeSpecs": [
+        "ram",
+        "storage",
+        "battery",
+        "icloud",
+        "biometrics",
+        "extra"
+      ],
+      "brand": "Apple"
+    },
+    {
+      "id": "apple-15pro-1",
+      "model": "iPhone 15 Pro Max",
+      "ram": "8GB",
+      "storage": "512GB",
+      "price": "74000",
+      "condition": "New",
+      "image": "https://images.unsplash.com/photo-1696446702085-786d70c91799?auto=format&fit=crop&q=80&w=4096&h=1840",
+      "images": [
+        "https://images.unsplash.com/photo-1696446702085-786d70c91799?auto=format&fit=crop&q=80&w=4096&h=1840",
+        "https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&q=80&w=4096&h=1840",
+        "https://images.unsplash.com/photo-1678911820864-e2c567c655d7?auto=format&fit=crop&q=80&w=4096&h=1840"
+      ],
+      "description": "Natural Titanium, неактивиран.",
+      "location": "Скопје",
+      "fmi": "Off",
+      "batteryHealth": 100,
+      "faceId": true,
+      "trueTone": true,
+      "extraFeatures": [
+        "5G",
+        "120Hz",
+        "Wireless Charging"
+      ],
+      "brand": "Apple"
+    }
+  ],
+  "config": {
+    "brands": [
+      "Apple",
+      "Samsung",
+      "Xiaomi",
+      "Huawei",
+      "Google",
+      "OnePlus",
+      "Vivo",
+      "Realme"
+    ],
+    "ramOptions": [
+      "4GB",
+      "6GB",
+      "8GB",
+      "12GB",
+      "16GB",
+      "24GB"
+    ],
+    "storageOptions": [
+      "64GB",
+      "128GB",
+      "256GB",
+      "512GB",
+      "1TB"
+    ],
+    "locations": [
+      "Скопје",
+      "Битола",
+      "Прилеп",
+      "Тетово",
+      "Куманово",
+      "Охрид",
+      "Велес",
+      "Штип"
+    ],
+    "featureOptions": [
+      "90Hz",
+      "120Hz",
+      "144Hz",
+      "OLED",
+      "NFC",
+      "5G",
+      "IP68",
+      "Stereo Speakers",
+      "Wireless Charging"
+    ],
+    "globalNote": "Инфо после 16ч",
+    "showGlobalNote": true,
+    "specTypes": [
+      {
+        "id": "ram",
+        "label": "RAM"
+      },
+      {
+        "id": "storage",
+        "label": "Меморија"
+      },
+      {
+        "id": "battery",
+        "label": "Батерија (Apple)"
+      },
+      {
+        "id": "icloud",
+        "label": "iCloud (Apple)"
+      },
+      {
+        "id": "biometrics",
+        "label": "Face/Touch ID"
+      },
+      {
+        "id": "extra",
+        "label": "Екстра Опции"
+      },
+      {
+        "id": "unlocked",
+        "label": "Мрежен Статус"
+      },
+      {
+        "id": "googleplay",
+        "label": "Google Play (Huawei)"
+      }
+    ]
+  }
+}
