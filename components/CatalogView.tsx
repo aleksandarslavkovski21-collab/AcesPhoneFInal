@@ -44,8 +44,8 @@ const CatalogView: React.FC<CatalogViewProps> = ({
 
         {/* Unified Search/Filter Container (Morphed on Mobile) */}
         <div 
-          className={`mb-16 bg-white border border-blue-100 rounded-[1.5rem] soft-shadow relative z-40 transition-all duration-500 ease-in-out overflow-hidden
-            ${showFilters ? 'p-8' : 'p-0 md:p-8'} 
+          className={`mb-16 bg-white border border-blue-100 rounded-[1.5rem] soft-shadow relative z-40 transition-all duration-500 ease-in-out
+            ${showFilters ? 'p-8 overflow-visible' : 'p-0 md:p-8 overflow-hidden md:overflow-visible'} 
             ${!showFilters ? 'hover:border-blue-300' : ''}`}
         >
           {/* Mobile Toggle Trigger Area */}
