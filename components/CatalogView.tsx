@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PhoneModel, Filters, AppConfig } from '../types';
 import PhoneCard from './PhoneCard';
 import CustomSelect from './CustomSelect';
@@ -21,6 +21,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
   allPhones,
   config
 }) => {
+  const [showFilters, setShowFilters] = useState(false);
   // Directly use all filtered phones without pagination as requested
   const visiblePhones = phones;
 
@@ -41,57 +42,93 @@ const CatalogView: React.FC<CatalogViewProps> = ({
           </div>
         )}
 
-        {/* Filters Panel */}
-        <div className="mb-16 bg-white border border-blue-100 p-8 rounded-[1.5rem] soft-shadow relative z-40">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 items-end">
-            <div>
-              <label className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]">Пребарај</label>
-              <input 
-                type="text" 
-                placeholder="Внеси модел..."
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-300 transition-all"
-                value={filters.searchQuery}
-                onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
-              />
+        {/* Unified Search/Filter Container (Morphed on Mobile) */}
+        <div 
+          className={`mb-16 bg-white border border-blue-100 rounded-[1.5rem] soft-shadow relative z-40 transition-all duration-500 ease-in-out overflow-hidden
+            ${showFilters ? 'p-8' : 'p-0 md:p-8'} 
+            ${!showFilters ? 'hover:border-blue-300' : ''}`}
+        >
+          {/* Mobile Toggle Trigger Area */}
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`md:hidden w-full flex items-center justify-between transition-all duration-500 px-6
+              ${showFilters ? 'py-0 h-0 opacity-0 mb-4' : 'py-5 h-auto opacity-100'}`}
+          >
+            <span className="text-lg font-black text-slate-800 uppercase tracking-widest">
+              Пребарај Телефон
+            </span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            
-            <CustomSelect 
-              label="Бренд"
-              value={filters.brand}
-              options={config.brands || []}
-              placeholder="Сите"
-              onChange={(val) => setFilters(prev => ({ ...prev, brand: val }))}
-            />
+          </button>
 
-            <CustomSelect 
-              label="Меморија"
-              value={filters.storage}
-              options={config.storageOptions || []}
-              placeholder="Сите"
-              onChange={(val) => setFilters(prev => ({ ...prev, storage: val }))}
-            />
+          {/* Internal Content (Filters) */}
+          <div className={`transition-all duration-500 ease-in-out ${showFilters ? 'opacity-100' : 'opacity-0 md:opacity-100 h-0 md:h-auto overflow-hidden md:overflow-visible pointer-events-none md:pointer-events-auto'}`}>
+            {/* Mobile Close Button (Inside) */}
+            <div className="md:hidden flex justify-between items-center mb-6">
+              <span className="text-[12px] font-black text-blue-600 uppercase tracking-widest">Опции за пребарување</span>
+              <button 
+                onClick={() => setShowFilters(false)}
+                className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-            <CustomSelect 
-              label="RAM"
-              value={filters.ram}
-              options={config.ramOptions || []}
-              placeholder="Сите"
-              onChange={(val) => setFilters(prev => ({ ...prev, ram: val }))}
-            />
-
-            {/* Budget Slider */}
-            <div className="flex flex-col justify-end h-full">
-              <div className="flex justify-between items-center mb-3 ml-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Буџет</label>
-                <span className="text-[12px] font-black text-blue-600">{filters.priceMax.toLocaleString()} МКД</span>
-              </div>
-              <div className="px-2 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 items-end">
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]">Пребарај</label>
                 <input 
-                  type="range" min="0" max="150000" step="1000"
-                  className="w-full accent-blue-500 h-1 bg-blue-100 rounded-full appearance-none cursor-pointer"
-                  value={filters.priceMax}
-                  onChange={(e) => setFilters(prev => ({ ...prev, priceMax: parseInt(e.target.value) }))}
+                  type="text" 
+                  placeholder="Внеси модел..."
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-300 transition-all"
+                  value={filters.searchQuery}
+                  onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
                 />
+              </div>
+              
+              <CustomSelect 
+                label="Бренд"
+                value={filters.brand}
+                options={config.brands || []}
+                placeholder="Сите"
+                onChange={(val) => setFilters(prev => ({ ...prev, brand: val }))}
+              />
+
+              <CustomSelect 
+                label="Меморија"
+                value={filters.storage}
+                options={config.storageOptions || []}
+                placeholder="Сите"
+                onChange={(val) => setFilters(prev => ({ ...prev, storage: val }))}
+              />
+
+              <CustomSelect 
+                label="RAM"
+                value={filters.ram}
+                options={config.ramOptions || []}
+                placeholder="Сите"
+                onChange={(val) => setFilters(prev => ({ ...prev, ram: val }))}
+              />
+
+              {/* Budget Slider */}
+              <div className="flex flex-col justify-end h-full">
+                <div className="flex justify-between items-center mb-3 ml-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Буџет</label>
+                  <span className="text-[12px] font-black text-blue-600">{filters.priceMax.toLocaleString()} МКД</span>
+                </div>
+                <div className="px-2 pb-4">
+                  <input 
+                    type="range" min="0" max="150000" step="1000"
+                    className="w-full accent-blue-500 h-1 bg-blue-100 rounded-full appearance-none cursor-pointer"
+                    value={filters.priceMax}
+                    onChange={(e) => setFilters(prev => ({ ...prev, priceMax: parseInt(e.target.value) }))}
+                  />
+                </div>
               </div>
             </div>
           </div>

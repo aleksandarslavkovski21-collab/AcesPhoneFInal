@@ -16,7 +16,9 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPhoneId, setEditingPhoneId] = useState<string | null>(null);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedSpecIndex, setDraggedSpecIndex] = useState<number | null>(null);
+  const [draggedImgIndex, setDraggedImgIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<{index: number, position: 'before' | 'after'} | null>(null);
   const [newOption, setNewOption] = useState({ brand: '', ram: '', storage: '', location: '', feature: '', specId: '', specLabel: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -268,24 +270,24 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
+    setDraggedSpecIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
+    if (draggedSpecIndex === null || draggedSpecIndex === index) return;
 
     const newOrder = [...formData.specOrder];
-    const item = newOrder.splice(draggedIndex, 1)[0];
+    const item = newOrder.splice(draggedSpecIndex, 1)[0];
     newOrder.splice(index, 0, item);
     
-    setDraggedIndex(index);
+    setDraggedSpecIndex(index);
     setFormData({ ...formData, specOrder: newOrder });
   };
 
   const handleDragEnd = () => {
-    setDraggedIndex(null);
+    setDraggedSpecIndex(null);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,6 +321,59 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
   const removeImage = (index: number) => {
     setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Image Drag & Drop Handlers
+  const handleImgDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedImgIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Create a ghost image if needed, or just let default behavior work
+  };
+
+  const handleImgDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedImgIndex === null) return;
+
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const position = x < rect.width / 2 ? 'before' : 'after';
+
+    if (draggedImgIndex === index || 
+       (draggedImgIndex === index - 1 && position === 'before') ||
+       (draggedImgIndex === index + 1 && position === 'after')) {
+      setDropTargetIndex(null);
+    } else {
+      setDropTargetIndex({ index, position });
+    }
+  };
+
+  const handleImgDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedImgIndex === null || dropTargetIndex === null) {
+      setDraggedImgIndex(null);
+      setDropTargetIndex(null);
+      return;
+    }
+
+    const newPreviews = [...previews];
+    const itemToMove = newPreviews.splice(draggedImgIndex, 1)[0];
+    
+    let targetIdx = dropTargetIndex.index;
+    if (draggedImgIndex < targetIdx && dropTargetIndex.position === 'before') {
+      targetIdx -= 1;
+    } else if (draggedImgIndex > targetIdx && dropTargetIndex.position === 'after') {
+      targetIdx += 1;
+    }
+    
+    newPreviews.splice(targetIdx, 0, itemToMove);
+    setPreviews(newPreviews);
+    setDraggedImgIndex(null);
+    setDropTargetIndex(null);
+  };
+
+  const handleImgDragEnd = () => {
+    setDraggedImgIndex(null);
+    setDropTargetIndex(null);
   };
 
   const handleEditInit = (phone: PhoneModel) => {
@@ -453,11 +508,24 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                   {previews.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                       {previews.map((src, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group border border-slate-100 shadow-sm">
-                          <img src={src} className="w-full h-full object-cover" alt="preview" />
+                        <div 
+                          key={`${idx}-${src.substring(0, 20)}`} 
+                          draggable
+                          onDragStart={(e) => handleImgDragStart(e, idx)}
+                          onDragOver={(e) => handleImgDragOver(e, idx)}
+                          onDrop={handleImgDrop}
+                          onDragEnd={handleImgDragEnd}
+                          className={`relative aspect-square rounded-2xl overflow-hidden group border border-slate-100 shadow-sm transition-all duration-200 cursor-move ${draggedImgIndex === idx ? 'opacity-30 scale-95' : 'opacity-100'} ${dropTargetIndex?.index === idx ? (dropTargetIndex.position === 'before' ? 'ring-l-4 ring-blue-500 pl-1' : 'ring-r-4 ring-blue-500 pr-1') : ''}`}
+                        >
+                          {/* Drop Indicator Light up */}
+                          {dropTargetIndex?.index === idx && (
+                            <div className={`absolute inset-y-0 w-1 bg-blue-500 z-50 animate-pulse ${dropTargetIndex.position === 'before' ? 'left-0' : 'right-0'}`} />
+                          )}
+
+                          <img src={src} className="w-full h-full object-cover pointer-events-none" alt="preview" />
                           
                           {/* Order Badge */}
-                          <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[12px] font-black w-6 h-6 rounded-lg flex items-center justify-center backdrop-blur-sm z-10">
+                          <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[12px] font-black w-6 h-6 rounded-lg flex items-center justify-center backdrop-blur-sm z-10 pointer-events-none">
                             {idx + 1}
                           </div>
 
@@ -468,7 +536,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); moveImage(idx, 'left'); }}
                                 disabled={idx === 0}
-                                className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-xl disabled:opacity-30 transition-all"
+                                className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-xl disabled:opacity-30 transition-all focus:outline-none"
                                 title="Помести лево"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -478,7 +546,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                               <button 
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
-                                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all"
+                                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all focus:outline-none"
                                 title="Избриши"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -489,7 +557,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); moveImage(idx, 'right'); }}
                                 disabled={idx === previews.length - 1}
-                                className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-xl disabled:opacity-30 transition-all"
+                                className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-xl disabled:opacity-30 transition-all focus:outline-none"
                                 title="Помести десно"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -497,7 +565,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                                 </svg>
                               </button>
                             </div>
-                            {idx === 0 && <span className="text-[10px] font-black text-white uppercase tracking-widest bg-blue-600 px-2 py-1 rounded-md">Главна слика</span>}
+                            {idx === 0 && <span className="text-[10px] font-black text-white uppercase tracking-widest bg-blue-600 px-2 py-1 rounded-md pointer-events-none">Главна слика</span>}
                           </div>
                         </div>
                       ))}
