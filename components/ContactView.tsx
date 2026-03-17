@@ -7,47 +7,45 @@ const ContactView: React.FC = () => {
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-400/20 dark:bg-blue-600/10 blur-[100px] rounded-full point-events-none -z-10"></div>
 
       <div className="max-w-2xl w-full px-6 text-center z-10">
-        <h1 className="text-4xl md:text-6xl font-semibold tracking-tight text-slate-900 dark:text-white mb-4">
-          Get in touch.
+        <h1 className="text-3xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white mb-4 uppercase">
+          Контакт
         </h1>
-        <p className="text-lg text-slate-500 dark:text-slate-400 mb-12 max-w-lg mx-auto font-light">
-          We're here to help you find the perfect device. Reach out to us via phone or your preferred messaging app.
+        <p className="text-md md:text-lg text-slate-500 dark:text-slate-400 mb-12 max-w-lg mx-auto font-medium">
+          Тука сме за да ви помогнеме да го најдете совршениот уред. Контактирајте не преку телефон или вашата омилена апликација.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
           {/* Phone Card */}
-          <a href="tel:+38972240441" className="group flex flex-col items-center justify-center p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl transition-all duration-300">
-            <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-slate-700 dark:text-slate-300">
+          <a href="tel:+38972240441" className="group flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl transition-all duration-300">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-slate-700 dark:text-slate-300">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </div>
-            <h3 className="text-sm font-medium text-slate-900 dark:text-white uppercase tracking-wider mb-1">Phone</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">072 240 441</p>
+            <h3 className="text-[10px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">Телефон</h3>
+            <p className="text-sm font-black text-blue-600">072 240 441</p>
           </a>
 
           {/* WhatsApp Card */}
-          <a href="https://wa.me/38972240441" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center justify-center p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
-            <div className="w-14 h-14 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-[#25D366]">
-              {/* WhatsApp SVG */}
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
-                <path d="M12.031 2c-5.517 0-9.993 4.476-9.993 9.993 0 1.763.461 3.42 1.268 4.86l-1.347 4.919 5.035-1.322c1.404.765 3.004 1.2 4.704 1.2 5.517 0 9.993-4.476 9.993-9.993 0-5.517-4.476-9.993-9.993-9.993zm5.82 14.23c-.25.703-1.442 1.284-1.983 1.364-.492.072-.943.081-2.76-.64-2.31-.92-3.804-3.28-3.92-3.43-.116-.15-.947-1.26-.947-2.4 0-1.14.593-1.7 1.01-1.88.32-.14.71-.23.94-.23.23 0 .46.01.66.02.2.01.47-.09.73.54.26.64.89 2.16.97 2.33.08.17.13.37.02.6-.11.23-.17.37-.34.57-.17.2-.36.45-.52.6-.17.17-.35.35-.15.7.2.35.88 1.45 1.89 2.35 1.3 1.16 2.39 1.52 2.73 1.69.34.17.54.14.74-.09.2-.23.86-1.01 1.09-1.36.23-.35.46-.29.77-.17.31.12 1.97.93 2.31 1.1.34.17.57.26.65.4.08.14.08.83-.17 1.53z"/>
+          <a href="https://wa.me/38972240441" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-[#25D366]">
+              <svg viewBox="0 0 448 512" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7">
+                <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.2-3.2-5.6-.3-8.6 2.5-11.3 2.5-2.5 5.5-6.5 8.3-9.8 2.8-3.3 3.7-5.6 5.6-9.3 1.8-3.7.9-6.9-.5-9.8-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.8 23.5 9.2 31.6 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
               </svg>
             </div>
-            <h3 className="text-sm font-medium text-slate-900 dark:text-white uppercase tracking-wider mb-1">WhatsApp</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Message Us</p>
+            <h3 className="text-[10px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">WhatsApp</h3>
+            <p className="text-sm font-black text-[#25D366]">Пиши ни</p>
           </a>
 
           {/* Viber Card */}
-          <a href="viber://chat?number=%2B38972240441" className="group flex flex-col items-center justify-center p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl hover:shadow-[#7360f2]/10 transition-all duration-300">
-            <div className="w-14 h-14 bg-[#7360f2]/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-[#7360f2]">
-              {/* Clean Viber SVG */}
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" className="w-7 h-7">
-                <path d="M432.22 83.05c-41.56-42.34-100.86-53-157.92-50.62-73.69 2.58-132.89 31.06-174.67 78.48A185.08 185.08 0 0 0 56 211.52C48 274.61 70.36 348.45 125 401.78l12 11.51-14.82 51.55c-6.84 21.6 3.09 36 21.08 30l67.24-21.57c6-.86 19.34.82 25.12 3.82C318 518 424.81 498.07 472.91 425c34.78-52.93 42.6-118 21.92-181.65-15.54-47-39.75-121.2-62.61-160.3zm-39.3 226s-1.89 5.8-5 13.91c-22.11 50-68.61 71.37-124.63 60.18l-37-3.83-50.62 16.59 13.5-47-5.91-4c-6.07-5-53.11-49.88-51.49-110.15s37.19-81.25 79.28-91c28.51-6.17 62-.64 97 19.11A132 132 0 0 1 405.39 237C410.66 261 405.8 285.8 392.92 309zm-29.43-69.64a5 5 0 0 0 6.6-4.59c-3.15-54.8-19.14-80.44-59.6-105-23.75-14.54-52.5-17.76-65.71-18a5 5 0 0 0-5.11 4.79c-3.7 41 20 73.1 57.19 100.31a96.6 96.6 0 0 0 62.43 23 5 5 0 0 0 4.2-5.51z"></path>
+          <a href="viber://add?number=38972240441" className="group flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl hover:shadow-[#7360f2]/10 transition-all duration-300">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-[#7360f2]/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-[#7360f2]">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7">
+                <path d="M19.336 1c-.815 0-1.616.142-2.383.424l-1.464 2.227c-.244.372-.213.856.076 1.157l.836.837c.304.305.304.782 0 1.087l-5.657 5.657c-.305.304-.782.304-1.087 0l-.837-.836c-.301-.289-.785-.32-1.157-.076L6.424 12.935a6.012 6.012 0 01-.424 2.383c.42.872 1.236 2.408 2.052 3.161.801.737 2.012 1.378 3.513 1.378 5.759 0 10.435-4.676 10.435-10.435 0-1.501-.641-2.712-1.378-3.513-.753-.816-2.289-1.632-3.161-2.052-.767-.282-1.341-.421-2.129-.421zm-7.305 15.305l-.01.01s.01-.01 0 0z"/>
               </svg>
             </div>
-            <h3 className="text-sm font-medium text-slate-900 dark:text-white uppercase tracking-wider mb-1">Viber</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Chat with Us</p>
+            <h3 className="text-[10px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1">Viber</h3>
+            <p className="text-sm font-black text-[#7360f2]">Пиши ни</p>
           </a>
         </div>
       </div>

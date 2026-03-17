@@ -135,15 +135,15 @@ const CatalogView: React.FC<CatalogViewProps> = ({
         </div>
 
         {/* Catalog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
           {visiblePhones.length > 0 ? (
             visiblePhones.map(phone => (
               <PhoneCard key={phone.id} phone={phone} config={config} onClick={() => onSelectPhone(phone.id)} />
             ))
           ) : (
-            <div className="col-span-full py-24 text-center">
-              <span className="text-4xl">🔎</span>
-              <p className="text-slate-400 mt-4 font-bold uppercase tracking-widest text-[12px]">Нема резултати</p>
+            <div className="col-span-full py-12 md:py-24 text-center">
+              <span className="text-3xl md:text-4xl">🔎</span>
+              <p className="text-slate-400 mt-4 font-black uppercase tracking-widest text-[10px] md:text-[12px]">Нема резултати</p>
             </div>
           )}
         </div>
