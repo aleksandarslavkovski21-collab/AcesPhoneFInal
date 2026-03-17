@@ -40,7 +40,7 @@ const ContactView: React.FC = () => {
           {/* Viber Card */}
           <a href="viber://add?number=38972240441" className="group flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-xl hover:shadow-[#7360f2]/10 transition-all duration-300">
             <div className="w-12 h-12 md:w-14 md:h-14 bg-[#7360f2]/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-[#7360f2]">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-8 md:h-8">
                 <path d="M19.336 1c-.815 0-1.616.142-2.383.424l-1.464 2.227c-.244.372-.213.856.076 1.157l.836.837c.304.305.304.782 0 1.087l-5.657 5.657c-.305.304-.782.304-1.087 0l-.837-.836c-.301-.289-.785-.32-1.157-.076L6.424 12.935a6.012 6.012 0 01-.424 2.383c.42.872 1.236 2.408 2.052 3.161.801.737 2.012 1.378 3.513 1.378 5.759 0 10.435-4.676 10.435-10.435 0-1.501-.641-2.712-1.378-3.513-.753-.816-2.289-1.632-3.161-2.052-.767-.282-1.341-.421-2.129-.421zm-7.305 15.305l-.01.01s.01-.01 0 0z"/>
               </svg>
             </div>

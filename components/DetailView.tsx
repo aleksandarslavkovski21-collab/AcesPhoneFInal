@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PhoneModel, AppConfig } from '../types';
 
 interface DetailViewProps {
@@ -14,12 +14,25 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
   const [showLightbox, setShowLightbox] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [translateX, setTranslateX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Auto-scroll to top on mouth
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   const images = phone.images && phone.images.length ? phone.images : [phone.image];
   const priceDen = typeof phone.price === 'string' ? parseFloat(phone.price) : phone.price;
 
-  const nextImg = () => setActiveImgIndex((prev) => (prev + 1) % images.length);
-  const prevImg = () => setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
+  const nextImg = () => {
+    setActiveImgIndex((prev) => (prev + 1) % images.length);
+    setTranslateX(0);
+  };
+  const prevImg = () => {
+    setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
+    setTranslateX(0);
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText("072 240 441");
@@ -29,19 +42,38 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const currentX = e.targetTouches[0].clientX;
+    const diff = currentX - touchStart;
+    setTranslateX(diff);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return;
     const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStart - touchEnd;
+    const diff = touchEnd - touchStart;
     
-    if (Math.abs(diff) > 50) { // Threshold
-      if (diff > 0) nextImg();
-      else prevImg();
+    setIsDragging(false);
+
+    if (Math.abs(diff) > 80) { // Threshold for swipe
+      if (diff > 0) prevImg();
+      else nextImg();
+    } else {
+      setTranslateX(0); // Snap back
     }
     setTouchStart(null);
   };
+
+  // Improved Viber SVG
+  const ViberIcon = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.336 1c-.815 0-1.616.142-2.383.424l-1.464 2.227c-.244.372-.213.856.076 1.157l.836.837c.304.305.304.782 0 1.087l-5.657 5.657c-.305.304-.782.304-1.087 0l-.837-.836c-.301-.289-.785-.32-1.157-.076L6.424 12.935a6.012 6.012 0 01-.424 2.383c.42.872 1.236 2.408 2.052 3.161.801.737 2.012 1.378 3.513 1.378 5.759 0 10.435-4.676 10.435-10.435 0-1.501-.641-2.712-1.378-3.513-.753-.816-2.289-1.632-3.161-2.052-.767-.282-1.341-.421-2.129-.421zm-7.305 15.305l-.01.01s.01-.01 0 0z"/>
+    </svg>
+  );
 
   return (
     <div className="pt-10 md:pt-20 pb-20 min-h-screen">
@@ -68,42 +100,44 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           {/* Gallery with Carousel */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7">
             <div className="space-y-6">
               <div 
                 className="aspect-square bg-white rounded-[1.5rem] md:rounded-[2rem] border border-blue-100 p-4 md:p-8 flex items-center justify-center relative soft-shadow overflow-hidden group cursor-zoom-in"
                 onClick={() => setShowLightbox(true)}
                 onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {/* Main Image */}
-                <img 
-                  src={images[activeImgIndex]} 
-                  className="max-w-[90%] max-h-[90%] object-contain relative z-10 drop-shadow-2xl transition-all duration-500 hover:scale-105"
-                  alt={phone.model}
-                />
+                {/* Image Slider Wrapper */}
+                <div 
+                  className={`w-full h-full flex items-center justify-center transition-transform ${isDragging ? '' : 'duration-300'}`}
+                  style={{ transform: `translateX(${translateX}px)` }}
+                >
+                  <img 
+                    src={images[activeImgIndex]} 
+                    className="max-w-[90%] max-h-[90%] object-contain relative z-10 drop-shadow-2xl transition-all duration-500 hover:scale-105"
+                    alt={phone.model}
+                  />
+                </div>
                 
                 {/* Carousel Controls */}
                 {images.length > 1 && (
                   <>
                     <button 
                       onClick={(e) => { e.stopPropagation(); prevImg(); }}
-                      className="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-blue-600 hover:text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg border border-slate-100 transition-all opacity-0 group-hover:opacity-100 hidden sm:flex"
+                      className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-blue-600 hover:text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg border border-slate-100 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 active:scale-90"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); nextImg(); }}
-                      className="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-blue-600 hover:text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg border border-slate-100 transition-all opacity-0 group-hover:opacity-100 hidden sm:flex"
+                      className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-blue-600 hover:text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg border border-slate-100 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 active:scale-90"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                     </button>
                   </>
                 )}
-                
-                {/* Mobile Tap Hints */}
-                <div className="absolute inset-y-0 left-0 w-1/4 z-10 sm:hidden" onClick={(e) => { e.stopPropagation(); prevImg(); }} />
-                <div className="absolute inset-y-0 right-0 w-1/4 z-10 sm:hidden" onClick={(e) => { e.stopPropagation(); nextImg(); }} />
               </div>
 
               {/* Centered Indicators Below Image */}
@@ -119,13 +153,6 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
                   ))}
                 </div>
               )}
-            </div>
-            
-            <div className="bg-white rounded-[2rem] p-10 border border-blue-100 soft-shadow">
-              <h3 className="text-lg font-black mb-6 uppercase tracking-widest text-blue-600">Опис на уредот</h3>
-              <p className="text-slate-600 whitespace-pre-wrap leading-[1.8] font-medium">
-                {phone.description || "Нема внесен детален опис."}
-              </p>
             </div>
           </div>
 
@@ -170,8 +197,8 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
                   ))}
                 </div>
 
-                {/* Info Section */}
-                <div className="space-y-4 mb-10">
+                {/* Info & Description Section */}
+                <div className="space-y-6 mb-10">
                   {config.showGlobalNote && config.globalNote && (
                     <div className="bg-slate-900 text-white p-6 rounded-2xl flex items-center gap-4 border border-slate-800 animate-pulse">
                       <span className="text-2xl">⏰</span>
@@ -181,12 +208,19 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
                       </div>
                     </div>
                   )}
+
+                  <div className="bg-slate-50 rounded-[1.5rem] p-8 border border-slate-100">
+                    <h3 className="text-blue-500 font-black text-[11px] uppercase tracking-widest mb-4">Опис на уредот</h3>
+                    <p className="text-slate-600 whitespace-pre-wrap leading-relaxed font-medium text-sm">
+                      {phone.description || "Нема внесен детален опис."}
+                    </p>
+                  </div>
                 </div>
 
-                {/* New Contact Section */}
-                <div className="space-y-6 bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
+                {/* Contact Section */}
+                <div className="space-y-6 bg-blue-50/50 p-8 rounded-[2rem] border border-blue-100/50">
                   <div className="text-center">
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Контакт Продавач</span>
+                    <span className="text-[11px] font-black text-blue-400 uppercase tracking-widest mb-2 block">Контакт Продавач</span>
                     <div className="text-3xl font-black text-slate-900 mb-4">072 240 441</div>
                     <button 
                       onClick={handleCopy}
@@ -206,15 +240,13 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
                     </button>
                   </div>
                   
-                  <div className="flex items-center justify-center gap-8 pt-4 border-t border-slate-200">
+                  <div className="flex items-center justify-center gap-8 pt-4 border-t border-blue-100">
                     <a 
                       href={`viber://add?number=38972240441`}
                       className="flex flex-col items-center gap-2 group transition-all active:scale-95"
                     >
                       <div className="w-12 h-12 md:w-14 md:h-14 bg-[#7360f2] rounded-full flex items-center justify-center shadow-lg shadow-purple-200 border-[3px] md:border-4 border-white transition-all group-hover:rotate-6 group-hover:scale-110">
-                        <svg className="w-6 h-6 md:w-7 md:h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M19.336 1c-.815 0-1.616.142-2.383.424l-1.464 2.227c-.244.372-.213.856.076 1.157l.836.837c.304.305.304.782 0 1.087l-5.657 5.657c-.305.304-.782.304-1.087 0l-.837-.836c-.301-.289-.785-.32-1.157-.076L6.424 12.935a6.012 6.012 0 01-.424 2.383c.42.872 1.236 2.408 2.052 3.161.801.737 2.012 1.378 3.513 1.378 5.759 0 10.435-4.676 10.435-10.435 0-1.501-.641-2.712-1.378-3.513-.753-.816-2.289-1.632-3.161-2.052-.767-.282-1.341-.421-2.129-.421zm-7.305 15.305l-.01.01s.01-.01 0 0z"/>
-                        </svg>
+                        <ViberIcon className="w-6 h-6 md:w-8 md:h-8 text-white" />
                       </div>
                       <span className="text-[10px] md:text-[11px] font-black text-[#7360f2] uppercase tracking-widest">Viber</span>
                     </a>
@@ -239,6 +271,7 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
           </div>
         </div>
       </div>
+
       {/* Lightbox Modal */}
       {showLightbox && (
         <div 
@@ -246,57 +279,62 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
           onClick={() => setShowLightbox(false)}
         >
           <button 
-            className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors z-50 p-4"
+            className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors z-[1050] p-4"
             onClick={() => setShowLightbox(false)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
 
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-            <img 
-              src={images[activeImgIndex]} 
-              className="max-w-[100%] max-h-[100%] object-contain transition-transform duration-300 shadow-2xl"
-              style={{ transform: `scale(${zoomScale})` }}
+            <div 
+              className={`w-full h-full flex items-center justify-center transition-transform ${isDragging ? '' : 'duration-300'}`}
+              style={{ transform: `translateX(${translateX}px)` }}
               onTouchStart={handleTouchStart}
+              onTouchMove={(e) => {
+                if (zoomScale > 1) return; // Disable pan while zoomed
+                handleTouchMove(e);
+              }}
               onTouchEnd={(e) => {
-                if (zoomScale > 1) return; // Disable swipe while zoomed
+                if (zoomScale > 1) return;
                 handleTouchEnd(e);
               }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setZoomScale(prev => prev === 1 ? 2.5 : 1);
-              }}
-              alt={phone.model}
-            />
+            >
+              <img 
+                src={images[activeImgIndex]} 
+                className="max-w-[100%] max-h-[100%] object-contain transition-transform duration-300 shadow-2xl"
+                style={{ transform: `scale(${zoomScale})` }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomScale(prev => prev === 1 ? 2.5 : 1);
+                }}
+                alt={phone.model}
+              />
+            </div>
 
             {/* Lightbox Controls */}
             {images.length > 1 && (
               <>
                 <button 
                   onClick={(e) => { e.stopPropagation(); prevImg(); setZoomScale(1); }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white w-16 h-16 rounded-full flex items-center justify-center backdrop-blur-md transition-all hidden sm:flex"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center backdrop-blur-md transition-all z-50 shadow-2xl active:scale-90"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); nextImg(); setZoomScale(1); }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white w-16 h-16 rounded-full flex items-center justify-center backdrop-blur-md transition-all hidden sm:flex"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center backdrop-blur-md transition-all z-50 shadow-2xl active:scale-90"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                 </button>
               </>
             )}
 
-            {/* Mobile Navigation Area */}
-            <div className="absolute inset-y-0 left-0 w-1/4 sm:hidden" onClick={(e) => { e.stopPropagation(); prevImg(); setZoomScale(1); }} />
-            <div className="absolute inset-y-0 right-0 w-1/4 sm:hidden" onClick={(e) => { e.stopPropagation(); nextImg(); setZoomScale(1); }} />
-
             {/* Image Counter */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full text-white font-black text-sm tracking-widest">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full text-white font-black text-sm tracking-widest z-50">
               {activeImgIndex + 1} / {images.length}
             </div>
             
-            <div className="absolute top-10 left-1/2 -translate-x-1/2 text-white/40 text-[10px] font-black uppercase tracking-[0.2em] pointer-events-none">
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 text-white/40 text-[10px] font-black uppercase tracking-[0.2em] pointer-events-none z-50 hidden sm:block">
               {zoomScale > 1 ? 'Допрете за да излезете од зум' : 'Допрете за зум • Повлечете лево/десно'}
             </div>
           </div>
