@@ -14,7 +14,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Database Initialization
-const DB_FILE = path.join(__dirname, 'aces-phones.db');
+// Railway automatically sets RAILWAY_VOLUME_MOUNT_PATH when a volume is attached.
+// If available, use it to persist data across deployments. Otherwise, fallback to local directory.
+const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
+const DB_FILE = path.join(dataDir, 'aces-phones.db');
 const db = initDB(DB_FILE);
 
 // Migration Logic from old db.json
@@ -78,6 +81,10 @@ const loginLimiter = rateLimit({
 async function startServer() {
   const app = express();
   const port = process.env.PORT || 3000;
+
+  // Trust the first proxy (e.g. Railway, Nginx)
+  // This is required for express-rate-limit to work correctly behind a proxy
+  app.set('trust proxy', 1);
 
   app.use(cors());
   app.use(bodyParser.json({ limit: '50mb' }));

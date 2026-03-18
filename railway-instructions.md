@@ -16,13 +16,18 @@ Railway will need several environment variables to function correctly. Go to the
 | `APP_URL` | The public URL Railway gives you (e.g., `https://your-app.up.railway.app`) |
 
 ## 2. Persistent Storage (SQLite)
-Since this app uses SQLite, your database will be deleted every time you deploy unless you set up a **Volume**.
+Since this app uses SQLite, your database will be deleted every time you deploy/restart unless you set up a **Volume**.
 
-1. Go to **Settings** > **Volumes** > **Add Volume**.
-2. Mount the volume at `/app/data` (or similar).
-3. **Important**: If you change the mount path, you must update the `DB_FILE` path in `server.ts` to point to the volume.
+1.  **Create Volume:**
+    *   In your Railway project, click **+ New** > **Volume**.
+    *   For **Mount Path**, enter exactly: `/app/data`
+2.  **Attach to Service:**
+    *   Go to your Service settings, then to the **Volumes** tab.
+    *   If the volume isn't already attached, attach it.
+3.  **Automatic Code Support:**
+    *   The app's `server.ts` is already updated to automatically find this path via the `RAILWAY_VOLUME_MOUNT_PATH` variable.
+    *   Your `aces-phones.db` will now be safely stored in the volume and will persist forever!
 
-Currently, the app stores data in the root directory as `aces-phones.db`. For Railway, it is recommended to move this to a persistent path.
 
 ## 3. Build & Start
 Railway will automatically detect the `package.json` and run:
