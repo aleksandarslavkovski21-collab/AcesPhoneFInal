@@ -27,7 +27,8 @@ const App: React.FC = () => {
     storage: "",
     condition: "",
     priceMax: 150000, 
-    searchQuery: ""
+    searchQuery: "",
+    sortOrder: "desc"
   });
 
   // Fetch data on mount
@@ -140,6 +141,15 @@ const App: React.FC = () => {
         `${p.brand} ${p.model}`.toLowerCase().includes(filters.searchQuery.toLowerCase());
       
       return matchesBrand && matchesRam && matchesStorage && matchesCondition && matchesPrice && matchesSearch;
+    }).sort((a, b) => {
+      const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
+      const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;
+      
+      if (filters.sortOrder === 'asc') {
+        return priceA - priceB;
+      } else {
+        return priceB - priceA;
+      }
     });
   }, [phones, filters]);
 

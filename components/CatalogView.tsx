@@ -49,20 +49,28 @@ const CatalogView: React.FC<CatalogViewProps> = ({
             ${!showFilters ? 'hover:border-blue-300' : ''}`}
         >
           {/* Mobile Toggle Trigger Area */}
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            className={`md:hidden w-full flex items-center justify-between transition-all duration-500 px-6
-              ${showFilters ? 'py-0 h-0 opacity-0 mb-4' : 'py-5 h-auto opacity-100'}`}
-          >
-            <span className="text-lg font-black text-slate-800 uppercase tracking-widest">
-              Пребарај Телефон
-            </span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </button>
+          <div className={`md:hidden flex flex-col gap-3 transition-all duration-500 px-6 ${showFilters ? 'py-0 h-0 opacity-0 mb-4' : 'py-5 h-auto opacity-100'}`}>
+            <button 
+              onClick={() => setShowFilters(true)}
+              className="w-full flex items-center justify-between"
+            >
+              <span className="text-lg font-black text-slate-800 uppercase tracking-widest">
+                Пребарај Телефон
+              </span>
+              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </button>
+            <button 
+              onClick={() => setFilters(prev => ({ ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' }))}
+              className="w-full py-4 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-3"
+            >
+              <span className="font-black text-xs uppercase tracking-widest">Сортирај по цена</span>
+              <span className="font-black text-sm">{filters.sortOrder === 'asc' ? '↑' : '↓'}</span>
+            </button>
+          </div>
 
           {/* Internal Content (Filters) */}
           <div className={`transition-all duration-500 ease-in-out ${showFilters ? 'opacity-100' : 'opacity-0 md:opacity-100 h-0 md:h-auto overflow-hidden md:overflow-visible pointer-events-none md:pointer-events-auto'}`}>
@@ -79,13 +87,13 @@ const CatalogView: React.FC<CatalogViewProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 items-end">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-end">
+              <div className="relative group/search">
                 <label className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]">Пребарај</label>
                 <input 
                   type="text" 
                   placeholder="Внеси модел..."
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-300 transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-300 transition-all font-bold"
                   value={filters.searchQuery}
                   onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
                 />
@@ -130,6 +138,17 @@ const CatalogView: React.FC<CatalogViewProps> = ({
                   />
                 </div>
               </div>
+
+              <CustomSelect 
+                label="Сортирај"
+                value={filters.sortOrder === 'desc' ? 'Високо до Ниско' : 'Ниско до Високо'}
+                options={['Високо до Ниско', 'Ниско до Високо']}
+                placeholder="Сортирај"
+                onChange={(val) => setFilters(prev => ({ 
+                  ...prev, 
+                  sortOrder: val === 'Високо до Ниско' ? 'desc' : 'asc' 
+                }))}
+              />
             </div>
           </div>
         </div>

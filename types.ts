@@ -19,6 +19,10 @@ export interface PhoneModel {
   specOrder?: string[]; 
   activeSpecs?: string[]; // New: Which specs should be visible
   customNote?: string;    // New: Black card for defects/special notes
+  // Important Info Box (Customizable per ad)
+  infoText?: string;
+  infoEmoji?: string;
+  infoBgColor?: string;
   // iPhone Specific
   fmi?: 'On' | 'Off';
   batteryHealth?: string | number;
@@ -52,4 +56,5 @@ export interface Filters {
   condition: string;
   priceMax: number;
   searchQuery: string;
+  sortOrder: 'asc' | 'desc';
 }

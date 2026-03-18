@@ -199,7 +199,18 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
 
                 {/* Info & Description Section */}
                 <div className="space-y-6 mb-10">
-                  {config.showGlobalNote && config.globalNote && (
+                  {phone.infoText ? (
+                    <div 
+                      className="p-6 rounded-2xl flex items-center gap-4 border shadow-sm animate-pulse"
+                      style={{ backgroundColor: phone.infoBgColor || '#fef3c7', borderColor: 'rgba(0,0,0,0.05)' }}
+                    >
+                      <span className="text-2xl">{phone.infoEmoji || '⏰'}</span>
+                      <div>
+                        <div className="text-[11px] font-black uppercase tracking-widest text-slate-500 opacity-60">ВАЖНА ИНФОРМАЦИЈА</div>
+                        <div className="text-sm font-black text-slate-900">{phone.infoText}</div>
+                      </div>
+                    </div>
+                  ) : (config.showGlobalNote && config.globalNote && (
                     <div className="bg-slate-900 text-white p-6 rounded-2xl flex items-center gap-4 border border-slate-800 animate-pulse">
                       <span className="text-2xl">⏰</span>
                       <div>
@@ -207,7 +218,7 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
                         <div className="text-sm font-black">{config.globalNote}</div>
                       </div>
                     </div>
-                  )}
+                  ))}
 
                   <div className="bg-slate-50 rounded-[1.5rem] p-8 border border-slate-100">
                     <h3 className="text-blue-500 font-black text-[11px] uppercase tracking-widest mb-4">Опис на уредот</h3>

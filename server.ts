@@ -18,6 +18,7 @@ const __dirname = path.dirname(__filename);
 // If available, use it to persist data across deployments. Otherwise, fallback to local directory.
 const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
 const DB_FILE = path.join(dataDir, 'aces-phones.db');
+console.log(`[Database] Initializing from: ${DB_FILE}`);
 const db = initDB(DB_FILE);
 
 // Migration Logic from old db.json

@@ -20,6 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const [draggedImgIndex, setDraggedImgIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<{index: number, position: 'before' | 'after'} | null>(null);
   const [newOption, setNewOption] = useState({ brand: '', ram: '', storage: '', location: '', feature: '', specId: '', specLabel: '' });
+  const [statusMessage, setStatusMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const compressImage = (file: File): Promise<string> => {
@@ -155,7 +156,10 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
     googleServices: true,
     selectedFeatures: [] as string[],
     specOrder: defaultActiveSpecs,
-    activeSpecs: defaultActiveSpecs
+    activeSpecs: defaultActiveSpecs,
+    infoText: 'Инфо после 16ч',
+    infoEmoji: '⏰',
+    infoBgColor: '#fef3c7' // Amber-100
   });
 
   if (!isAuthenticated) {
@@ -247,11 +251,15 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       alert(`ГРЕШКА: Опцијата "${value}" не може да се избрише бидејќи се користи во активни огласи!`);
       return;
     }
-
-    onConfigUpdate({ 
-      ...config, 
-      [type]: (config[type] as string[]).filter(opt => opt !== value) 
-    });
+    
+    if (window.confirm(`Дали сте сигурни дека сакате да ја избришете опцијата "${value}"?`)) {
+      onConfigUpdate({ 
+        ...config, 
+        [type]: (config[type] as string[]).filter(opt => opt !== value) 
+      });
+      setStatusMessage({ text: `Опцијата "${value}" е избришана.`, type: 'success' });
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
   };
 
   const handleResetToDefaults = () => {
@@ -398,7 +406,10 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       googleServices: phone.googleServices ?? true,
       selectedFeatures: phone.extraFeatures || [],
       specOrder: phone.specOrder || defaultActiveSpecs,
-      activeSpecs: phone.activeSpecs || defaultActiveSpecs
+      activeSpecs: phone.activeSpecs || defaultActiveSpecs,
+      infoText: phone.infoText || '',
+      infoEmoji: phone.infoEmoji || '⏰',
+      infoBgColor: phone.infoBgColor || '#fef3c7'
     });
     setPreviews(phone.images || [phone.image]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -415,7 +426,10 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       fmi: 'Off', batteryHealth: '', trueTone: false, faceId: false, touchId: false,
       googleServices: true, selectedFeatures: [],
       specOrder: defaultActiveSpecs,
-      activeSpecs: defaultActiveSpecs
+      activeSpecs: defaultActiveSpecs,
+      infoText: 'Инфо после 16ч',
+      infoEmoji: '⏰',
+      infoBgColor: '#fef3c7'
     });
     setPreviews([]);
   };
@@ -439,6 +453,9 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       extraFeatures: formData.selectedFeatures,
       specOrder: formData.specOrder,
       activeSpecs: formData.activeSpecs,
+      infoText: formData.infoText,
+      infoEmoji: formData.infoEmoji,
+      infoBgColor: formData.infoBgColor,
       image: previews[0] || 'https://via.placeholder.com/300x300',
       images: previews
     };
@@ -457,11 +474,28 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
     
     handleCancelEdit();
     setIsSubmitting(false);
+    setStatusMessage({ 
+      text: editingPhoneId ? 'Огласот е успешно ажуриран!' : 'Огласот е успешно објавен!', 
+      type: 'success' 
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => setStatusMessage(null), 5000);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-[1400px]">
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-8">
+    <div className="container mx-auto px-4 py-8 md:py-12 max-w-7xl animate-in fade-in duration-500">
+      {statusMessage && (
+        <div 
+          className={`fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-2xl shadow-2xl border font-black text-sm uppercase tracking-widest flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${
+            statusMessage.type === 'success' 
+              ? 'bg-emerald-500 text-white border-emerald-400' 
+              : 'bg-red-500 text-white border-red-400'
+          }`}
+        >
+          {statusMessage.type === 'success' ? '✅' : '❌'} {statusMessage.text}
+        </div>
+      )}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <div className="flex items-center gap-4 mb-2">
              <h2 className="text-4xl font-black text-slate-900 tracking-tight">Админ Контрола</h2>
@@ -594,6 +628,13 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                   <input type="text" placeholder="пр. P60 Pro" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-blue-300 outline-none w-full font-bold" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})}/>
                 </div>
 
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Цена</label>
+                    <input type="number" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm w-full font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-300" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}/>
+                  </div>
+                </div>
+
                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
                   <h4 className="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-4">Опции за мрежа и состојба</h4>
                   <div className="grid grid-cols-1 gap-3">
@@ -625,23 +666,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                   </div>
                 </div>
 
-                <div className="bg-red-600 p-6 rounded-3xl border border-red-700 shadow-xl">
-                  <h4 className="text-[12px] font-black text-red-100 uppercase tracking-widest mb-2">Специјална напомена / Дефект</h4>
-                  <input 
-                    type="text" 
-                    placeholder="пр. Скршено стакло" 
-                    className="bg-red-700 border border-red-500 rounded-xl px-4 py-3 text-sm w-full font-black text-white outline-none focus:ring-2 focus:ring-white placeholder:text-red-400"
-                    value={formData.customNote}
-                    onChange={e => setFormData({...formData, customNote: e.target.value})}
-                  />
-                </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-[12px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Цена</label>
-                    <input type="number" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm w-full font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-300" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}/>
-                  </div>
-                </div>
 
                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
                   <h4 className="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-4">Видливи спецификации на картичка</h4>
@@ -711,6 +736,45 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                    />
                 </div>
 
+                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Важна Информација (⏰)</label>
+                    <input 
+                      type="color" 
+                      value={formData.infoBgColor} 
+                      onChange={e => setFormData({...formData, infoBgColor: e.target.value})}
+                      className="w-8 h-8 rounded-lg overflow-hidden border-none cursor-pointer p-0"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="⏰" 
+                      className="w-16 bg-white border border-slate-100 rounded-xl px-3 py-3 text-center text-lg outline-none focus:ring-2 focus:ring-blue-300"
+                      value={formData.infoEmoji}
+                      onChange={e => setFormData({...formData, infoEmoji: e.target.value})}
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Инфо после 16ч..." 
+                      className="flex-grow bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-300"
+                      value={formData.infoText}
+                      onChange={e => setFormData({...formData, infoText: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-red-600 p-6 rounded-3xl border border-red-700 shadow-xl">
+                  <h4 className="text-[12px] font-black text-red-100 uppercase tracking-widest mb-2">Специјална напомена / Дефект</h4>
+                  <input 
+                    type="text" 
+                    placeholder="пр. Скршено стакло" 
+                    className="bg-red-700 border border-red-500 rounded-xl px-4 py-3 text-sm w-full font-black text-white outline-none focus:ring-2 focus:ring-white placeholder:text-red-400"
+                    value={formData.customNote}
+                    onChange={e => setFormData({...formData, customNote: e.target.value})}
+                  />
+                </div>
+
                 <div className="flex gap-2">
                   <button type="submit" disabled={isSubmitting} className="flex-grow bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-lg shadow-xl active:scale-[0.97] transition-all">
                     {isSubmitting ? 'Се зачувува...' : editingPhoneId ? 'Зачувај' : 'Објави'}
@@ -738,7 +802,18 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleEditInit(p)} className="p-3 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl border border-blue-100 transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
-                      <button onClick={() => onUpdate(phones.filter(item => item.id !== p.id))} className="p-3 text-red-600 hover:bg-red-600 hover:text-white rounded-2xl border border-red-100 transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
+                      <button 
+                        onClick={() => {
+                          if (window.confirm(`Дали сте сигурни дека сакате да го избришете огласот за "${p.brand} ${p.model}"?`)) {
+                            onUpdate(phones.filter(item => item.id !== p.id));
+                            setStatusMessage({ text: 'Огласот е успешно избришан.', type: 'success' });
+                            setTimeout(() => setStatusMessage(null), 3000);
+                          }
+                        }} 
+                        className="p-3 text-red-600 hover:bg-red-600 hover:text-white rounded-2xl border border-red-100 transition-all"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -755,11 +830,10 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
             {[
-              { id: 'brands', label: 'Брендови', icon: '🏷️', field: 'brand' },
-              { id: 'ramOptions', label: 'RAM Опции', icon: '💾', field: 'ram' },
-              { id: 'storageOptions', label: 'Меморија', icon: '📀', field: 'storage' },
-              { id: 'featureOptions', label: 'Додатни Опции', icon: '⚡', field: 'feature' }
-            ].map(sect => (
+               { id: 'brands', label: 'Брендови', icon: '🏷️', field: 'brand' },
+               { id: 'ramOptions', label: 'RAM Опции', icon: '💾', field: 'ram' },
+               { id: 'storageOptions', label: 'Меморија', icon: '📀', field: 'storage' }
+             ].map(sect => (
               <section key={sect.id} className="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
                 <div className="flex items-center justify-between mb-6 shrink-0"><h3 className="text-sm font-black flex items-center gap-2"><span className="text-lg">{sect.icon}</span> {sect.label}</h3></div>
                 

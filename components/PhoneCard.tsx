@@ -148,6 +148,15 @@ const PhoneCard: React.FC<PhoneCardProps> = ({ phone, config, onClick }) => {
               {phone.customNote}
             </div>
           )}
+          {phone.infoText && (
+            <div 
+              className="px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-tight border shadow-sm flex items-center gap-1.5"
+              style={{ backgroundColor: phone.infoBgColor || '#fef3c7', borderColor: 'rgba(0,0,0,0.05)' }}
+            >
+              <span>{phone.infoEmoji || '⏰'}</span>
+              <span className="text-slate-900">{phone.infoText}</span>
+            </div>
+          )}
         </div>
 
         <div className="mt-auto flex items-end justify-between pt-4 border-t border-slate-50">
