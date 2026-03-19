@@ -49,7 +49,7 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
         x: e.targetTouches[0].clientX - translateX, 
         y: e.targetTouches[0].clientY - translateY 
       });
-    } else {
+    } else if (!showLightbox) {
       setTouchStart(e.targetTouches[0].clientX);
       setIsDragging(true);
     }
@@ -59,7 +59,7 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
     if (isDragging && showLightbox && zoomScale > 1) {
       setTranslateX(e.targetTouches[0].clientX - dragOrigin.x);
       setTranslateY(e.targetTouches[0].clientY - dragOrigin.y);
-    } else if (touchStart !== null) {
+    } else if (touchStart !== null && !showLightbox) {
       const currentX = e.targetTouches[0].clientX;
       const diff = currentX - touchStart;
       setTranslateX(diff);
@@ -69,7 +69,7 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (showLightbox && zoomScale > 1) {
       setIsDragging(false);
-    } else if (touchStart !== null) {
+    } else if (touchStart !== null && !showLightbox) {
       const touchEnd = e.changedTouches[0].clientX;
       const diff = touchEnd - touchStart;
       
