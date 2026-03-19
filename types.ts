@@ -9,6 +9,8 @@ export interface PhoneModel {
   condition: string;
   image: string;
   images?: string[];
+  thumbnail?: string; // New: Optimized listing image
+  size_kb?: number;    // New: Storage usage stat
   description: string;
   location?: string;
   brand: string;
@@ -29,6 +31,7 @@ export interface PhoneModel {
   trueTone?: boolean;
   faceId?: boolean;
   touchId?: boolean;
+  icloud?: 'On' | 'Off'; // New: iCloud Status
   // Huawei Specific
   googleServices?: boolean;
 }

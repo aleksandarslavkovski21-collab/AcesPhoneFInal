@@ -22,8 +22,31 @@ const CatalogView: React.FC<CatalogViewProps> = ({
   config
 }) => {
   const [showFilters, setShowFilters] = useState(false);
-  // Directly use all filtered phones without pagination as requested
-  const visiblePhones = phones;
+  const [displayLimit, setDisplayLimit] = useState(20);
+
+  // Reset display limit when phones list (filtered) changes
+  React.useEffect(() => {
+    setDisplayLimit(20);
+  }, [phones]);
+
+  // Infinite scroll logic
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 200 >=
+        document.documentElement.offsetHeight
+      ) {
+        if (displayLimit < phones.length) {
+          setDisplayLimit(prev => prev + 20);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [displayLimit, phones.length]);
+
+  const visiblePhones = phones.slice(0, displayLimit);
 
   return (
     <div className="relative pt-12 grid-pattern min-h-screen">
@@ -89,8 +112,14 @@ const CatalogView: React.FC<CatalogViewProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-end">
               <div className="relative group/search">
-                <label className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]">Пребарај</label>
+                <label 
+                  htmlFor="search-query"
+                  className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]"
+                >
+                  Пребарај
+                </label>
                 <input 
+                  id="search-query"
                   type="text" 
                   placeholder="Внеси модел..."
                   className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:border-blue-300 transition-all font-bold"
@@ -100,6 +129,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
               </div>
               
               <CustomSelect 
+                id="brand-filter"
                 label="Бренд"
                 value={filters.brand}
                 options={config.brands || []}
@@ -108,6 +138,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
               />
 
               <CustomSelect 
+                id="storage-filter"
                 label="Меморија"
                 value={filters.storage}
                 options={config.storageOptions || []}
@@ -116,11 +147,30 @@ const CatalogView: React.FC<CatalogViewProps> = ({
               />
 
               <CustomSelect 
+                id="location-filter"
+                label="Локација"
+                value={filters.location}
+                options={config.locations || []}
+                placeholder="Сите"
+                onChange={(val) => setFilters(prev => ({ ...prev, location: val }))}
+              />
+
+              <CustomSelect 
+                id="ram-filter"
                 label="RAM"
                 value={filters.ram}
                 options={config.ramOptions || []}
                 placeholder="Сите"
                 onChange={(val) => setFilters(prev => ({ ...prev, ram: val }))}
+              />
+
+              <CustomSelect 
+                id="feature-filter"
+                label="Екстра Опции"
+                value={filters.feature}
+                options={config.featureOptions || []}
+                placeholder="Сите"
+                onChange={(val) => setFilters(prev => ({ ...prev, feature: val }))}
               />
 
               {/* Budget Slider */}
@@ -153,7 +203,6 @@ const CatalogView: React.FC<CatalogViewProps> = ({
           </div>
         </div>
 
-        {/* Catalog Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
           {visiblePhones.length > 0 ? (
             visiblePhones.map(phone => (
@@ -166,6 +215,16 @@ const CatalogView: React.FC<CatalogViewProps> = ({
             </div>
           )}
         </div>
+
+        {/* Infinite Scroll Footer */}
+        {displayLimit < phones.length && (
+          <div className="mt-12 flex justify-center pb-20">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Вчитување на повеќе производи...</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

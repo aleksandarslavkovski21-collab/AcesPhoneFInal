@@ -7,6 +7,7 @@ import DetailView from './components/DetailView';
 import Dashboard from './components/Dashboard';
 import Navbar from './components/Navbar';
 import ContactView from './components/ContactView';
+import SellView from './components/SellView';
 
 const App: React.FC = () => {
   const [phones, setPhones] = useState<PhoneModel[]>([]);
@@ -14,12 +15,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const [currentView, setCurrentView] = useState<'catalog' | 'detail' | 'dashboard' | 'contact'>('catalog');
+  const [currentView, setCurrentView] = useState<'catalog' | 'detail' | 'dashboard' | 'contact' | 'sell'>('catalog');
   const [selectedPhoneId, setSelectedPhoneId] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('pcp_dark_mode');
-    return saved === 'true';
-  });
   
   const [filters, setFilters] = useState<Filters>({
     brand: "",
@@ -97,14 +94,6 @@ const App: React.FC = () => {
     saveConfig();
   }, [config, isLoading, hasLoaded]);
 
-  useEffect(() => {
-    localStorage.setItem('pcp_dark_mode', isDarkMode.toString());
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -117,6 +106,9 @@ const App: React.FC = () => {
         setSelectedPhoneId(null);
       } else if (hash === '#/contact') {
         setCurrentView('contact');
+        setSelectedPhoneId(null);
+      } else if (hash === '#/sell') {
+        setCurrentView('sell');
         setSelectedPhoneId(null);
       } else {
         setCurrentView('catalog');
@@ -189,6 +181,8 @@ const App: React.FC = () => {
         return selectedPhone ? <DetailView phone={selectedPhone} onBack={handleBack} config={config} /> : null;
       case 'contact':
         return <ContactView />;
+      case 'sell':
+        return <SellView />;
       default:
         return <CatalogView 
           phones={filteredPhones} 
@@ -202,8 +196,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-brand-babyblue text-slate-900'} selection:bg-blue-200 selection:text-blue-900 transition-colors duration-500`}>
-      <Navbar isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} />
+    <div className="min-h-screen flex flex-col bg-brand-babyblue text-slate-900 selection:bg-blue-200 selection:text-blue-900">
+      <Navbar />
       <main className="pt-14 flex-grow">
         {renderContent()}
       </main>

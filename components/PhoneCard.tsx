@@ -52,7 +52,8 @@ const PhoneCard: React.FC<PhoneCardProps> = ({ phone, config, onClick }) => {
           </div>
         ) : null;
       case 'icloud':
-        return isApple && phone.fmi === 'Off' ? (
+        const icloudStatus = phone.icloud || phone.fmi;
+        return isApple && icloudStatus === 'Off' ? (
           <div key="icloud" className={icloudClass}>
             iCloud Off
           </div>
@@ -119,16 +120,19 @@ const PhoneCard: React.FC<PhoneCardProps> = ({ phone, config, onClick }) => {
     return [...badges, unlockedBadge, batteryBadge, icloudBadge];
   };
 
+  const [imgError, setImgError] = React.useState(false);
+
   return (
     <div 
-      className="group bg-white border border-blue-50 rounded-[1.25rem] overflow-hidden transition-all duration-300 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-200/50 cursor-pointer flex flex-col h-full"
+      className="group bg-white border border-blue-50 rounded-[1.25rem] overflow-hidden transition-all duration-300 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-200/50 hover:z-[60] cursor-pointer flex flex-col h-full relative"
       onClick={onClick}
     >
-      <div className="relative aspect-[4/3] bg-slate-50 p-6 flex items-center justify-center shrink-0">
+      <div className="relative aspect-[4/3] bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden">
         <img 
-          src={phone.image} 
+          src={imgError ? '/favicon.svg' : (phone.thumbnail || phone.image)} 
           alt={phone.model} 
-          className="max-w-[80%] max-h-[80%] object-contain transition-transform duration-500 group-hover:scale-110 drop-shadow-xl"
+          onError={() => setImgError(true)}
+          className={`w-full h-full transition-transform duration-500 group-hover:scale-110 drop-shadow-xl ${imgError ? 'object-contain p-8' : 'object-cover'}`}
         />
       </div>
 

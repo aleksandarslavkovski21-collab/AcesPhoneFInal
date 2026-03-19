@@ -18,8 +18,12 @@ const __dirname = path.dirname(__filename);
 // If available, use it to persist data across deployments. Otherwise, fallback to local directory.
 const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
 const DB_FILE = path.join(dataDir, 'aces-phones.db');
-console.log(`[Database] Initializing from: ${DB_FILE}`);
 const db = initDB(DB_FILE);
+const UPLOADS_DIR = path.join(dataDir, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  console.log(`[Storage] Created uploads directory: ${UPLOADS_DIR}`);
+}
 
 // Migration Logic from old db.json
 const OLD_DB_PATH = path.join(__dirname, 'db.json');
@@ -88,7 +92,8 @@ async function startServer() {
   app.set('trust proxy', 1);
 
   app.use(cors());
-  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.json({ limit: '100mb' })); // Increased for multi-image uploads
+  app.use('/uploads', express.static(UPLOADS_DIR));
 
   // API Routes
   app.post('/api/login', loginLimiter, (req, res) => {
@@ -206,7 +211,11 @@ async function startServer() {
       const phonesRows = db.prepare(`SELECT data FROM phones ORDER BY created_at DESC`).all();
       const configRow = db.prepare(`SELECT data FROM config WHERE id = 1`).get();
       
-      const phones = phonesRows.map((row: any) => JSON.parse(row.data));
+      const phones = phonesRows.map((row: any) => {
+        const phone = JSON.parse(row.data);
+        // Include stats if needed
+        return phone;
+      });
       const config = configRow ? JSON.parse((configRow as any).data) : null;
       
       res.json({ phones, config });
@@ -216,6 +225,24 @@ async function startServer() {
     }
   });
 
+  const handleBase64Image = (base64Str: string, id: string, suffix: string) => {
+    if (!base64Str || !base64Str.startsWith('data:image/')) return base64Str;
+    try {
+      const match = base64Str.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+      if (!match) return base64Str;
+      const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+      const data = match[2];
+      const buffer = Buffer.from(data, 'base64');
+      const filename = `${id}_${suffix}.${ext}`;
+      const filepath = path.join(UPLOADS_DIR, filename);
+      fs.writeFileSync(filepath, buffer);
+      return `/uploads/${filename}`;
+    } catch (e) {
+      console.error('Failed to save image:', e);
+      return base64Str;
+    }
+  };
+
   app.post('/api/phones', (req, res) => {
     try {
       const newPhones = req.body;
@@ -223,18 +250,47 @@ async function startServer() {
         return res.status(400).json({ success: false, error: 'Expected array of phones' });
       }
 
-      // We completely replace phones, simulating the old db.json array write
       db.transaction(() => {
         db.prepare('DELETE FROM phones').run();
         const insert = db.prepare(`
-          INSERT INTO phones (id, brand, model, price, ram, storage, condition, data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO phones (id, brand, model, price, ram, storage, condition, size_kb, data)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const phone of newPhones) {
+          // Process images: move Base64 out to files
+          if (phone.images && Array.isArray(phone.images)) {
+            phone.images = phone.images.map((img: string, idx: number) => 
+              handleBase64Image(img, phone.id, `img_${idx}`)
+            );
+          }
+          if (phone.image) {
+            phone.image = handleBase64Image(phone.image, phone.id, 'main');
+          }
+          if (phone.thumbnail) {
+            phone.thumbnail = handleBase64Image(phone.thumbnail, phone.id, 'thumb');
+          }
+
+          // Calculate approximate size in KB
+          const jsonData = JSON.stringify(phone);
+          let totalSizeB = Buffer.byteLength(jsonData, 'utf8');
+          
+          // Add file sizes if applicable
+          const imagePaths = [phone.image, ...(phone.images || []), phone.thumbnail];
+          for (const imgP of imagePaths) {
+            if (imgP && imgP.startsWith('/uploads/')) {
+              const fullP = path.join(dataDir, imgP);
+              if (fs.existsSync(fullP)) {
+                totalSizeB += fs.statSync(fullP).size;
+              }
+            }
+          }
+          const sizeKb = Math.round(totalSizeB / 1024);
+
           insert.run(
             phone.id, phone.brand, phone.model, String(phone.price), 
-            phone.ram || '', phone.storage || '', phone.condition, 
-            JSON.stringify(phone)
+            phone.ram || '', phone.storage || '', phone.condition,
+            sizeKb,
+            jsonData
           );
         }
       })();

@@ -15,7 +15,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const [activeTab, setActiveTab] = useState<'listings' | 'settings'>('listings');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPhoneId, setEditingPhoneId] = useState<string | null>(null);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [previews, setPreviews] = useState<{original: string, thumbnail: string}[]>([]);
   const [draggedSpecIndex, setDraggedSpecIndex] = useState<number | null>(null);
   const [draggedImgIndex, setDraggedImgIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<{index: number, position: 'before' | 'after'} | null>(null);
@@ -23,7 +23,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const [statusMessage, setStatusMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const compressImage = (file: File): Promise<string> => {
+  const compressImage = (file: File): Promise<{ original: string, thumbnail: string }> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -31,31 +31,31 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
         const img = new Image();
         img.src = event.target?.result as string;
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
+          const process = (maxW: number, maxH: number, quality: number) => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxW) {
+                height *= maxW / width;
+                width = maxW;
+              }
+            } else {
+              if (height > maxH) {
+                width *= maxH / height;
+                height = maxH;
+              }
             }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            return canvas.toDataURL('image/webp', quality);
+          };
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          const dataUrl = canvas.toDataURL('image/webp', 0.8);
-          resolve(dataUrl);
+          const original = process(1080, 1080, 0.85); // 1080p high quality
+          const thumbnail = process(300, 300, 0.6);   // Low quality for listing
+          resolve({ original, thumbnail });
         };
         img.onerror = reject;
       };
@@ -153,6 +153,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
     trueTone: false,
     faceId: false,
     touchId: false,
+    icloud: 'Off' as 'On' | 'Off',
     googleServices: true,
     selectedFeatures: [] as string[],
     specOrder: defaultActiveSpecs,
@@ -304,10 +305,10 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
     setIsSubmitting(true);
     try {
-      const compressedImages = await Promise.all(
+      const compressedResults = await Promise.all(
         Array.from(files).map((file: File) => compressImage(file))
       );
-      setPreviews(prev => [...prev, ...compressedImages]);
+      setPreviews(prev => [...prev, ...compressedResults]);
     } catch (err) {
       console.error('Error compressing images:', err);
       alert('Грешка при обработка на сликите.');
@@ -403,6 +404,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       trueTone: !!phone.trueTone,
       faceId: !!phone.faceId,
       touchId: !!phone.touchId,
+      icloud: phone.icloud || 'Off',
       googleServices: phone.googleServices ?? true,
       selectedFeatures: phone.extraFeatures || [],
       specOrder: phone.specOrder || defaultActiveSpecs,
@@ -411,7 +413,11 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       infoEmoji: phone.infoEmoji || '⏰',
       infoBgColor: phone.infoBgColor || '#fef3c7'
     });
-    setPreviews(phone.images || [phone.image]);
+    // For editing, we treat the existing URL as both original and thumbnail
+    const existingImages = (phone.images || [phone.image]).map(img => 
+      typeof img === 'string' ? { original: img, thumbnail: phone.thumbnail || img } : img
+    );
+    setPreviews(existingImages);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -424,6 +430,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       unlocked: true,
       lockedTo: '',
       fmi: 'Off', batteryHealth: '', trueTone: false, faceId: false, touchId: false,
+      icloud: 'Off',
       googleServices: true, selectedFeatures: [],
       specOrder: defaultActiveSpecs,
       activeSpecs: defaultActiveSpecs,
@@ -456,13 +463,21 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       infoText: formData.infoText,
       infoEmoji: formData.infoEmoji,
       infoBgColor: formData.infoBgColor,
-      image: previews[0] || 'https://via.placeholder.com/300x300',
-      images: previews
+      image: (previews[0] && previews[0].original) || '/favicon.svg',
+      thumbnail: (previews[0] && previews[0].thumbnail) || '/favicon.svg',
+      images: previews.map(p => p.original)
     };
 
     const finalData = {
       ...commonData,
-      ...(isApple ? { fmi: formData.fmi, batteryHealth: formData.batteryHealth, trueTone: formData.trueTone, faceId: formData.faceId, touchId: formData.touchId } : {}),
+      ...(isApple ? { 
+        fmi: formData.fmi, 
+        batteryHealth: formData.batteryHealth, 
+        trueTone: formData.trueTone, 
+        faceId: formData.faceId, 
+        touchId: formData.touchId,
+        icloud: formData.icloud
+      } : {}),
       ...(isHuawei ? { googleServices: formData.googleServices } : {})
     };
 
@@ -556,7 +571,16 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                             <div className={`absolute inset-y-0 w-1 bg-blue-500 z-50 animate-pulse ${dropTargetIndex.position === 'before' ? 'left-0' : 'right-0'}`} />
                           )}
 
-                          <img src={src} className="w-full h-full object-cover pointer-events-none" alt="preview" />
+                          <img 
+                            src={src.thumbnail} 
+                            onError={(e) => {
+                              e.currentTarget.src = '/favicon.svg';
+                              e.currentTarget.classList.remove('object-cover');
+                              e.currentTarget.classList.add('object-contain', 'p-4');
+                            }}
+                            className="w-full h-full object-cover pointer-events-none" 
+                            alt="preview" 
+                          />
                           
                           {/* Order Badge */}
                           <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[12px] font-black w-6 h-6 rounded-lg flex items-center justify-center backdrop-blur-sm z-10 pointer-events-none">
@@ -624,14 +648,14 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Модел</label>
-                  <input type="text" placeholder="пр. P60 Pro" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-blue-300 outline-none w-full font-bold" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})}/>
+                  <label htmlFor="phone-model" className="block text-[12px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Модел</label>
+                  <input id="phone-model" type="text" placeholder="пр. P60 Pro" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-blue-300 outline-none w-full font-bold" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})}/>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <label className="block text-[12px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Цена</label>
-                    <input type="number" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm w-full font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-300" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}/>
+                    <label htmlFor="phone-price" className="block text-[12px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Цена</label>
+                    <input id="phone-price" type="number" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm w-full font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-300" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}/>
                   </div>
                 </div>
 
@@ -653,8 +677,9 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
                     {!formData.unlocked && (
                       <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <label className="block text-[11px] font-black text-amber-600 uppercase mb-2 ml-1 tracking-widest">На кои мрежи е заклучен?</label>
+                        <label htmlFor="locked-to" className="block text-[11px] font-black text-amber-600 uppercase mb-2 ml-1 tracking-widest">На кои мрежи е заклучен?</label>
                         <input 
+                          id="locked-to"
                           type="text" 
                           placeholder="пр. T-Mobile, A1..." 
                           className="w-full bg-white border border-amber-200 rounded-xl px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-300"
@@ -720,16 +745,64 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                   </div>
                 </div>
 
+                {/* Apple-Specific Settings */}
+                {isApple && (
+                  <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3 mb-2">
+                       <span className="text-xl">🍎</span>
+                       <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">Apple Специфични Подесувања</h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, faceId: !formData.faceId})}
+                        className={`flex items-center justify-between p-4 rounded-xl border transition-all ${formData.faceId ? 'bg-white border-blue-200 text-blue-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      >
+                        <span className="text-[11px] font-black uppercase tracking-widest">FaceID</span>
+                        <div className={`w-10 h-6 rounded-full relative transition-colors ${formData.faceId ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.faceId ? 'right-1' : 'left-1'}`} />
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, icloud: formData.icloud === 'On' ? 'Off' : 'On'})}
+                        className={`flex items-center justify-between p-4 rounded-xl border transition-all ${formData.icloud === 'Off' ? 'bg-white border-emerald-200 text-emerald-700 shadow-sm' : 'bg-red-50 border-red-100 text-red-600'}`}
+                      >
+                        <span className="text-[11px] font-black uppercase tracking-widest">iCloud {formData.icloud === 'Off' ? '🔓' : '🔒'}</span>
+                        <span className="text-[11px] font-black">{formData.icloud === 'Off' ? 'OFF' : 'ON'}</span>
+                      </button>
+                    </div>
+
+                    <div>
+                      <label htmlFor="battery-health" className="block text-[11px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Battery Health 🔋</label>
+                      <div className="relative">
+                        <input 
+                          id="battery-health"
+                          type="text" 
+                          placeholder="пр. 92%..." 
+                          className="w-full bg-white border border-blue-100 rounded-xl px-4 py-4 text-sm font-black text-slate-700 outline-none focus:ring-2 focus:ring-blue-300"
+                          value={formData.batteryHealth}
+                          onChange={e => setFormData({...formData, batteryHealth: e.target.value})}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg">🔋</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label className="block text-[12px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Screen</label>
-                    <input type="text" placeholder='пр. 6.7"' className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-300" value={formData.screen} onChange={e => setFormData({...formData, screen: e.target.value})}/>
+                    <label htmlFor="screen-size" className="block text-[12px] font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Screen</label>
+                    <input id="screen-size" type="text" placeholder='пр. 6.7"' className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-300 w-full" value={formData.screen} onChange={e => setFormData({...formData, screen: e.target.value})}/>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                   <label className="block text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Опис</label>
+                   <label htmlFor="phone-desc" className="block text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Опис</label>
                    <textarea 
+                     id="phone-desc"
                      className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm w-full font-bold outline-none focus:ring-2 focus:ring-blue-300 min-h-[100px]"
                      value={formData.description}
                      onChange={e => setFormData({...formData, description: e.target.value})}
@@ -738,8 +811,9 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
                 <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Важна Информација (⏰)</label>
+                    <label htmlFor="info-color" className="text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Важна Информација (⏰)</label>
                     <input 
+                      id="info-color"
                       type="color" 
                       value={formData.infoBgColor} 
                       onChange={e => setFormData({...formData, infoBgColor: e.target.value})}
@@ -748,6 +822,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                   </div>
                   <div className="flex gap-2">
                     <input 
+                      id="info-emoji"
                       type="text" 
                       placeholder="⏰" 
                       className="w-16 bg-white border border-slate-100 rounded-xl px-3 py-3 text-center text-lg outline-none focus:ring-2 focus:ring-blue-300"
@@ -755,6 +830,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                       onChange={e => setFormData({...formData, infoEmoji: e.target.value})}
                     />
                     <input 
+                      id="info-text"
                       type="text" 
                       placeholder="Инфо после 16ч..." 
                       className="flex-grow bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-300"
@@ -765,8 +841,9 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                 </div>
 
                 <div className="bg-red-600 p-6 rounded-3xl border border-red-700 shadow-xl">
-                  <h4 className="text-[12px] font-black text-red-100 uppercase tracking-widest mb-2">Специјална напомена / Дефект</h4>
+                  <label htmlFor="custom-note" className="block text-[12px] font-black text-red-100 uppercase tracking-widest mb-2">Специјална напомена / Дефект</label>
                   <input 
+                    id="custom-note"
                     type="text" 
                     placeholder="пр. Скршено стакло" 
                     className="bg-red-700 border border-red-500 rounded-xl px-4 py-3 text-sm w-full font-black text-white outline-none focus:ring-2 focus:ring-white placeholder:text-red-400"
@@ -795,10 +872,24 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
               <div className="divide-y divide-slate-100">
                 {phones.map((p) => (
                   <div key={p.id} className="p-6 flex items-center gap-6 hover:bg-slate-50 group">
-                    <img src={p.image} className="w-20 h-20 rounded-2xl object-cover border border-slate-200 bg-white shadow-sm" />
+                    <img 
+                      src={p.image} 
+                      onError={(e) => { 
+                        e.currentTarget.src = '/favicon.svg'; 
+                        e.currentTarget.classList.remove('object-cover');
+                        e.currentTarget.classList.add('object-contain', 'p-4');
+                      }}
+                      className="w-20 h-20 rounded-2xl object-cover border border-slate-200 bg-white shadow-sm" 
+                    />
                     <div className="flex-grow">
                       <h4 className="font-black text-slate-900 text-lg">{p.brand} {p.model}</h4>
-                      <p className="text-sm text-slate-400 font-bold">{p.price.toLocaleString()} ден. • {p.location}</p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 uppercase tracking-widest">{p.price.toLocaleString()} МКД</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          Storage: {(p.size_kb || 0) > 1024 ? `${((p.size_kb || 0)/1024).toFixed(1)} MB` : `${p.size_kb || 0} KB`}
+                        </span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">• {p.location}</span>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleEditInit(p)} className="p-3 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl border border-blue-100 transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
@@ -823,9 +914,33 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] border border-slate-200">
-             <div className="text-sm font-black text-slate-800 uppercase tracking-widest">Конфигурација на опции</div>
-             <button onClick={handleResetToDefaults} className="bg-red-50 text-red-600 px-6 py-2 rounded-full text-[12px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all shadow-sm">🔄 Ресетирај</button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-6 bg-white p-8 rounded-[2rem] border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Важна Информација (Глобална)</h3>
+                  <p className="text-sm text-slate-400 font-medium italic">Прикажи/Скриј ја нотата на сите огласи.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onConfigUpdate({...config, showGlobalNote: !config.showGlobalNote})}
+                  className={`w-14 h-8 rounded-full relative transition-all duration-300 ${config.showGlobalNote ? 'bg-emerald-500 shadow-lg shadow-emerald-200' : 'bg-slate-300'}`}
+                >
+                  <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-sm ${config.showGlobalNote ? 'right-1' : 'left-1'}`} />
+                </button>
+              </div>
+              <textarea 
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-300 min-h-[100px] transition-all"
+                value={config.globalNote}
+                onChange={e => onConfigUpdate({...config, globalNote: e.target.value})}
+                placeholder="Внесете ја глобалната порака тука..."
+              />
+            </div>
+            
+            <div className="flex justify-between items-center bg-white p-8 rounded-[2rem] border border-slate-200 h-fit">
+               <div className="text-sm font-black text-slate-800 uppercase tracking-widest">Целосно Ресетирање</div>
+               <button onClick={handleResetToDefaults} className="bg-red-50 text-red-600 px-6 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all shadow-sm">🔄 Ресетирај конфигурација</button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">

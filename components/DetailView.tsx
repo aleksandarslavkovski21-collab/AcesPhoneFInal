@@ -15,7 +15,9 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
   const [zoomScale, setZoomScale] = useState(1);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [translateX, setTranslateX] = useState(0);
+  const [translateY, setTranslateY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragOrigin, setDragOrigin] = useState({ x: 0, y: 0 });
 
   // Auto-scroll to top on mouth
   useEffect(() => {
@@ -41,31 +43,78 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-    setIsDragging(true);
+    if (showLightbox && zoomScale > 1) {
+      setIsDragging(true);
+      setDragOrigin({ 
+        x: e.targetTouches[0].clientX - translateX, 
+        y: e.targetTouches[0].clientY - translateY 
+      });
+    } else {
+      setTouchStart(e.targetTouches[0].clientX);
+      setIsDragging(true);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStart === null) return;
-    const currentX = e.targetTouches[0].clientX;
-    const diff = currentX - touchStart;
-    setTranslateX(diff);
+    if (isDragging && showLightbox && zoomScale > 1) {
+      setTranslateX(e.targetTouches[0].clientX - dragOrigin.x);
+      setTranslateY(e.targetTouches[0].clientY - dragOrigin.y);
+    } else if (touchStart !== null) {
+      const currentX = e.targetTouches[0].clientX;
+      const diff = currentX - touchStart;
+      setTranslateX(diff);
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) return;
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchEnd - touchStart;
-    
-    setIsDragging(false);
+    if (showLightbox && zoomScale > 1) {
+      setIsDragging(false);
+    } else if (touchStart !== null) {
+      const touchEnd = e.changedTouches[0].clientX;
+      const diff = touchEnd - touchStart;
+      
+      setIsDragging(false);
 
-    if (Math.abs(diff) > 80) { // Threshold for swipe
-      if (diff > 0) prevImg();
-      else nextImg();
-    } else {
-      setTranslateX(0); // Snap back
+      if (Math.abs(diff) > 80) { 
+        if (diff > 0) prevImg();
+        else nextImg();
+      } else {
+        setTranslateX(0); 
+      }
+      setTouchStart(null);
     }
-    setTouchStart(null);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (showLightbox) {
+      e.preventDefault();
+      const delta = e.deltaY;
+      setZoomScale(prev => {
+        const newScale = prev - delta * 0.002;
+        return Math.min(Math.max(newScale, 1), 5);
+      });
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (showLightbox && zoomScale > 1) {
+      setIsDragging(true);
+      setDragOrigin({ 
+        x: e.clientX - translateX, 
+        y: e.clientY - translateY 
+      });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && showLightbox && zoomScale > 1) {
+      setTranslateX(e.clientX - dragOrigin.x);
+      setTranslateY(e.clientY - dragOrigin.y);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   // Improved Viber SVG
@@ -298,25 +347,30 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
 
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <div 
-              className={`w-full h-full flex items-center justify-center transition-transform ${isDragging ? '' : 'duration-300'}`}
-              style={{ transform: `translateX(${translateX}px)` }}
+              className={`w-full h-full flex items-center justify-center ${isDragging ? '' : 'transition-transform duration-300'}`}
+              style={{ transform: zoomScale > 1 ? `translate(${translateX}px, ${translateY}px)` : `translateX(${translateX}px)` }}
               onTouchStart={handleTouchStart}
-              onTouchMove={(e) => {
-                if (zoomScale > 1) return; // Disable pan while zoomed
-                handleTouchMove(e);
-              }}
-              onTouchEnd={(e) => {
-                if (zoomScale > 1) return;
-                handleTouchEnd(e);
-              }}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
             >
               <img 
                 src={images[activeImgIndex]} 
-                className="max-w-[100%] max-h-[100%] object-contain transition-transform duration-300 shadow-2xl"
+                className="max-w-[100%] max-h-[100%] object-contain transition-transform duration-300 shadow-2xl pointer-events-none select-none"
                 style={{ transform: `scale(${zoomScale})` }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setZoomScale(prev => prev === 1 ? 2.5 : 1);
+                  if (zoomScale > 1) {
+                    setZoomScale(1);
+                    setTranslateX(0);
+                    setTranslateY(0);
+                  } else {
+                    setZoomScale(2.5);
+                  }
                 }}
                 alt={phone.model}
               />

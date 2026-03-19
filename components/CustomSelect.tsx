@@ -8,6 +8,7 @@ interface CustomSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  id?: string;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({ 
@@ -16,7 +17,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   options, 
   onChange, 
   placeholder = "Избери...",
-  className = "" 
+  className = "",
+  id
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,11 +36,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]">
+        <label 
+          htmlFor={id} 
+          className="block text-[11px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-[0.2em]"
+        >
           {label}
         </label>
       )}
       <div 
+        id={id}
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full bg-slate-50 border ${isOpen ? 'border-blue-300' : 'border-slate-100'} rounded-xl px-5 py-4 text-sm font-bold text-slate-700 cursor-pointer flex items-center justify-between transition-all hover:bg-slate-100/50`}
       >
