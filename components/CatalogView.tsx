@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { PhoneModel, Filters, AppConfig } from '../types';
 import PhoneCard from './PhoneCard';
 import CustomSelect from './CustomSelect';
+import { sortOptions } from '../src/utils';
 
 interface CatalogViewProps {
   phones: PhoneModel[];
@@ -132,7 +133,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
                 id="brand-filter"
                 label="Бренд"
                 value={filters.brand}
-                options={config.brands || []}
+                options={sortOptions(config.brands || [])}
                 placeholder="Сите"
                 onChange={(val) => setFilters(prev => ({ ...prev, brand: val }))}
               />
@@ -141,7 +142,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
                 id="storage-filter"
                 label="Меморија"
                 value={filters.storage}
-                options={config.storageOptions || []}
+                options={sortOptions(config.storageOptions || [])}
                 placeholder="Сите"
                 onChange={(val) => setFilters(prev => ({ ...prev, storage: val }))}
               />
@@ -159,7 +160,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
                 id="ram-filter"
                 label="RAM"
                 value={filters.ram}
-                options={config.ramOptions || []}
+                options={sortOptions(config.ramOptions || [])}
                 placeholder="Сите"
                 onChange={(val) => setFilters(prev => ({ ...prev, ram: val }))}
               />
@@ -168,7 +169,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({
                 id="feature-filter"
                 label="Екстра Опции"
                 value={filters.feature}
-                options={config.featureOptions || []}
+                options={sortOptions(config.featureOptions || [])}
                 placeholder="Сите"
                 onChange={(val) => setFilters(prev => ({ ...prev, feature: val }))}
               />
@@ -199,6 +200,28 @@ const CatalogView: React.FC<CatalogViewProps> = ({
                   sortOrder: val === 'Високо до Ниско' ? 'desc' : 'asc' 
                 }))}
               />
+
+              <div className="flex items-end h-[54px] md:h-[58px]">
+                <button 
+                  onClick={() => setFilters({
+                    searchQuery: '',
+                    brand: '',
+                    storage: '',
+                    location: '',
+                    ram: '',
+                    feature: '',
+                    condition: '',
+                    priceMax: 150000,
+                    sortOrder: 'desc'
+                  })}
+                  className="w-full h-full bg-slate-100 text-slate-500 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Ресетирај
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { PhoneModel, AppConfig } from '../types';
 import { INITIAL_CONFIG } from '../data';
 import CustomSelect from './CustomSelect';
+import { sortOptions } from '../src/utils';
 
 interface DashboardProps {
   phones: PhoneModel[];
@@ -54,7 +55,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
           };
 
           const original = process(1080, 1080, 0.85); // 1080p high quality
-          const thumbnail = process(300, 300, 0.6);   // Low quality for listing
+          const thumbnail = process(600, 600, 0.82);   // Improved quality and resolution for listing
           resolve({ original, thumbnail });
         };
         img.onerror = reject;
@@ -640,7 +641,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                 <div className="space-y-4">
                   <label className="block text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Бренд</label>
                   <div className="flex flex-wrap gap-2">
-                    {config.brands.map(opt => (
+                    {sortOptions(config.brands).map(opt => (
                       <button
                         key={opt}
                         type="button"
@@ -722,7 +723,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                 <div className="space-y-4">
                   <label className="block text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">RAM</label>
                   <div className="flex flex-wrap gap-2">
-                    {(config.ramOptions || []).map(opt => (
+                    {sortOptions(config.ramOptions || []).map(opt => (
                       <button
                         key={opt}
                         type="button"
@@ -738,7 +739,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                 <div className="space-y-4">
                   <label className="block text-[12px] font-black text-slate-400 uppercase tracking-widest ml-1">Меморија</label>
                   <div className="flex flex-wrap gap-2">
-                    {(config.storageOptions || []).map(opt => (
+                    {sortOptions(config.storageOptions || []).map(opt => (
                       <button
                         key={opt}
                         type="button"

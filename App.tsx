@@ -24,7 +24,9 @@ const App: React.FC = () => {
     condition: "",
     priceMax: 150000, 
     searchQuery: "",
-    sortOrder: "desc"
+    sortOrder: "desc",
+    location: "",
+    feature: ""
   });
 
   // Fetch data on mount
@@ -135,10 +137,12 @@ const App: React.FC = () => {
       const matchesStorage = !filters.storage || p.storage === filters.storage;
       const matchesCondition = !filters.condition || p.condition === filters.condition;
       const matchesPrice = priceNum <= filters.priceMax;
+      const matchesLocation = !filters.location || p.location === filters.location;
+      const matchesFeature = !filters.feature || p.extraFeatures?.includes(filters.feature);
       const matchesSearch = !filters.searchQuery || 
         `${p.brand} ${p.model}`.toLowerCase().includes(filters.searchQuery.toLowerCase());
       
-      return matchesBrand && matchesRam && matchesStorage && matchesCondition && matchesPrice && matchesSearch;
+      return matchesBrand && matchesRam && matchesStorage && matchesCondition && matchesPrice && matchesSearch && matchesLocation && matchesFeature;
     }).sort((a, b) => {
       const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
       const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;

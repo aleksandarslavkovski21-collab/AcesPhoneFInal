@@ -60,4 +60,6 @@ export interface Filters {
   priceMax: number;
   searchQuery: string;
   sortOrder: 'asc' | 'desc';
+  location?: string;
+  feature?: string;
 }
