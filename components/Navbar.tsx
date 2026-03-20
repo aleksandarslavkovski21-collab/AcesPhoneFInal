@@ -40,16 +40,6 @@ const Navbar: React.FC<NavbarProps> = () => {
         </nav>
         
         <div className="flex items-center gap-5">
-          {/* Sell Phone Button - Hidden on mobile, shown in dropdown */}
-          <button 
-            onClick={() => window.location.hash = "#/sell"}
-            className="hidden md:flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-[13px] font-black uppercase tracking-wider shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all whitespace-nowrap"
-          >
-            <span>Продај телефон</span>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" stroke="#ffffff">
-              <path fillRule="evenodd" clipRule="evenodd" d="M12 4C12.5523 4 13 4.44772 13 5V11H19C19.5523 11 20 11.4477 20 12C20 12.5523 19.5523 13 19 13H13V19C13 19.5523 12.5523 20 12 20C11.4477 20 11 19.5523 11 19V13H5C4.44772 13 4 12.5523 4 12C4 11.4477 4.44772 11 5 11H11V5C11 4.44772 11.4477 4 12 4Z" fill="#ffffff"></path>
-            </svg>
-          </button>
 
           {/* Admin Link */}
           {localStorage.getItem('pcp_admin_auth') === 'true' && (
@@ -90,16 +80,6 @@ const Navbar: React.FC<NavbarProps> = () => {
             className="text-[15px] font-bold text-left text-slate-600"
           >
             Contact
-          </button>
-          <hr className="border-slate-100" />
-          <button 
-            onClick={() => { window.location.hash = "#/sell"; document.getElementById('mobile-menu')?.classList.add('hidden'); }}
-            className="flex items-center justify-between w-full bg-blue-600 text-white px-5 py-4 rounded-2xl text-[15px] font-black uppercase tracking-widest shadow-xl shadow-blue-100"
-          >
-            <span>Продај телефон</span>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" stroke="#ffffff">
-              <path fillRule="evenodd" clipRule="evenodd" d="M12 4C12.5523 4 13 4.44772 13 5V11H19C19.5523 11 20 11.4477 20 12C20 12.5523 19.5523 13 19 13H13V19C13 19.5523 12.5523 20 12 20C11.4477 20 11 19.5523 11 19V13H5C4.44772 13 4 12.5523 4 12C4 11.4477 4.44772 11 5 11H11V5C11 4.44772 11.4477 4 12 4Z" fill="#ffffff"></path>
-            </svg>
           </button>
         </div>
       </div>

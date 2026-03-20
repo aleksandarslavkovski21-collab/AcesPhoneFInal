@@ -102,11 +102,27 @@ async function startServer() {
     const cleanAdminPass = String(ADMIN_PASSWORD).trim();
     
     if (cleanInput === cleanAdminPass) {
-      res.json({ success: true, token: 'secret-session-token' });
+      // Use a consistent token for session verification
+      const token = 'secret-session-token-' + Buffer.from(cleanAdminPass).toString('base64').substring(0, 10);
+      res.json({ success: true, token });
     } else {
+      console.warn(`[Auth] Failed login attempt from IP: ${req.ip}`);
       res.status(401).json({ success: false, error: 'Погрешна лозинка' });
     }
   });
+
+  // Auth Middleware for protected routes
+  const requireAuth = (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    const expectedToken = 'secret-session-token-' + Buffer.from(String(ADMIN_PASSWORD).trim()).toString('base64').substring(0, 10);
+    
+    if (authHeader === `Bearer ${expectedToken}` || req.headers['x-admin-auth'] === 'true') {
+      next();
+    } else {
+      console.warn(`[Auth] Unauthorized access attempt to ${req.path} from IP: ${req.ip}`);
+      res.status(401).json({ error: 'Unauthorized' });
+    }
+  };
 
   // Google OAuth Routes
   app.get('/api/auth/google/url', (req, res) => {
@@ -243,7 +259,7 @@ async function startServer() {
     }
   };
 
-  app.post('/api/phones', (req, res) => {
+  app.post('/api/phones', requireAuth, (req, res) => {
     try {
       const newPhones = req.body;
       if (!Array.isArray(newPhones)) {
@@ -301,7 +317,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/config', (req, res) => {
+  app.post('/api/config', requireAuth, (req, res) => {
     try {
       const newConfig = req.body;
       const insert = db.prepare(`INSERT OR REPLACE INTO config (id, data) VALUES (1, ?)`);

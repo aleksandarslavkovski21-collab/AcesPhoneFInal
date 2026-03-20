@@ -7,7 +7,6 @@ import DetailView from './components/DetailView';
 import Dashboard from './components/Dashboard';
 import Navbar from './components/Navbar';
 import ContactView from './components/ContactView';
-import SellView from './components/SellView';
 
 const App: React.FC = () => {
   const [phones, setPhones] = useState<PhoneModel[]>([]);
@@ -15,7 +14,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const [currentView, setCurrentView] = useState<'catalog' | 'detail' | 'dashboard' | 'contact' | 'sell'>('catalog');
+  const [currentView, setCurrentView] = useState<'catalog' | 'detail' | 'dashboard' | 'contact'>('catalog');
   const [selectedPhoneId, setSelectedPhoneId] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<Filters>({
@@ -65,9 +64,14 @@ const App: React.FC = () => {
     if (!hasLoaded || isLoading) return;
     const savePhones = async () => {
       try {
+        const token = localStorage.getItem('pcp_admin_token');
         await fetch('/api/phones', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : '',
+            'x-admin-auth': localStorage.getItem('pcp_admin_auth') === 'true' ? 'true' : 'false'
+          },
           body: JSON.stringify(phones)
         });
       } catch (e) {
@@ -82,9 +86,14 @@ const App: React.FC = () => {
     if (!hasLoaded || isLoading) return;
     const saveConfig = async () => {
       try {
+        const token = localStorage.getItem('pcp_admin_token');
         await fetch('/api/config', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : '',
+            'x-admin-auth': localStorage.getItem('pcp_admin_auth') === 'true' ? 'true' : 'false'
+          },
           body: JSON.stringify(config)
         });
       } catch (e) {
@@ -106,9 +115,6 @@ const App: React.FC = () => {
         setSelectedPhoneId(null);
       } else if (hash === '#/contact') {
         setCurrentView('contact');
-        setSelectedPhoneId(null);
-      } else if (hash === '#/sell') {
-        setCurrentView('sell');
         setSelectedPhoneId(null);
       } else {
         setCurrentView('catalog');
@@ -181,8 +187,6 @@ const App: React.FC = () => {
         return selectedPhone ? <DetailView phone={selectedPhone} onBack={handleBack} config={config} /> : null;
       case 'contact':
         return <ContactView />;
-      case 'sell':
-        return <SellView />;
       default:
         return <CatalogView 
           phones={filteredPhones} 

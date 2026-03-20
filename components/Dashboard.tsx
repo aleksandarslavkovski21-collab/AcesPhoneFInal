@@ -75,6 +75,8 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
         setIsAuthenticated(true);
         localStorage.setItem('pcp_admin_auth', 'true');
+        // If the server sends a token through a cookie or we need to fetch it, 
+        // we'd handle it here. For now, Google Auth also relies on pcp_admin_auth signal.
       }
     };
 
@@ -120,6 +122,9 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
       if (res.ok && data.success) {
         setIsAuthenticated(true);
         localStorage.setItem('pcp_admin_auth', 'true');
+        if (data.token) {
+          localStorage.setItem('pcp_admin_token', data.token);
+        }
       } else {
         setAuthError(data.error || data.message?.error || 'Погрешна лозинка');
       }
@@ -131,6 +136,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('pcp_admin_auth');
+    localStorage.removeItem('pcp_admin_token');
     window.location.hash = "";
   };
 
@@ -558,7 +564,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                       {previews.map((src, idx) => (
                         <div 
-                          key={`${idx}-${src.substring(0, 20)}`} 
+                          key={`${idx}-${(src.original || '').substring(0, 30)}`} 
                           draggable
                           onDragStart={(e) => handleImgDragStart(e, idx)}
                           onDragOver={(e) => handleImgDragOver(e, idx)}
@@ -572,7 +578,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                           )}
 
                           <img 
-                            src={src.thumbnail} 
+                            src={src.thumbnail || src.original} 
                             onError={(e) => {
                               e.currentTarget.src = '/favicon.svg';
                               e.currentTarget.classList.remove('object-cover');
