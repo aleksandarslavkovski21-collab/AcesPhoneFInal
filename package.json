@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "NODE_ENV=production tsx server.ts",
-    "build": "vite build",
+    "start": "NODE_ENV=production node dist-server/server.js",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build": "npm run build:client && npm run build:server",
     "prestart": "npm run build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"

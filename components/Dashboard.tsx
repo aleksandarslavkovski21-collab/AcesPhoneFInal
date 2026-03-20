@@ -892,7 +892,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                       <div className="flex items-center gap-4 mt-1">
                         <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 uppercase tracking-widest">{p.price.toLocaleString()} МКД</span>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          Storage: {(p.size_kb || 0) > 1024 ? `${((p.size_kb || 0)/1024).toFixed(1)} MB` : `${p.size_kb || 0} KB`}
+                          Images: {(p.size_kb || 0) > 1024 ? `${((p.size_kb || 0)/1024).toFixed(1)} MB` : `${p.size_kb || 0} KB`}
                         </span>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">• {p.location}</span>
                       </div>

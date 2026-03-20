@@ -8,10 +8,16 @@ import cors from 'cors';
 import { rateLimit } from 'express-rate-limit';
 import { OAuth2Client } from 'google-auth-library';
 
-import { initDB } from './src/db/init.ts';
+import { initDB } from './src/db/init.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const rootDir = process.cwd();
+
+console.log('--- Starting Ace\'s Phones Server ---');
+console.log(`[Config] NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`[Config] Root Directory: ${rootDir}`);
+console.log(`[Config] __dirname: ${__dirname}`);
 
 // Database Initialization
 // Railway automatically sets RAILWAY_VOLUME_MOUNT_PATH when a volume is attached.
@@ -26,7 +32,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 // Migration Logic from old db.json
-const OLD_DB_PATH = path.join(__dirname, 'db.json');
+const OLD_DB_PATH = path.join(rootDir, 'db.json');
 if (fs.existsSync(OLD_DB_PATH)) {
   try {
     const backupPath = path.join(__dirname, 'db.json.bak');
@@ -224,12 +230,13 @@ async function startServer() {
 
   app.get('/api/data', (req, res) => {
     try {
-      const phonesRows = db.prepare(`SELECT data FROM phones ORDER BY created_at DESC`).all();
+      const phonesRows = db.prepare(`SELECT data, size_kb FROM phones ORDER BY created_at DESC`).all();
       const configRow = db.prepare(`SELECT data FROM config WHERE id = 1`).get();
       
       const phones = phonesRows.map((row: any) => {
         const phone = JSON.parse(row.data);
-        // Include stats if needed
+        // Include the size_kb from the database column
+        phone.size_kb = row.size_kb || 0;
         return phone;
       });
       const config = configRow ? JSON.parse((configRow as any).data) : null;
@@ -287,10 +294,9 @@ async function startServer() {
           }
 
           // Calculate approximate size in KB
-          const jsonData = JSON.stringify(phone);
-          let totalSizeB = Buffer.byteLength(jsonData, 'utf8');
+          // We prioritize image file sizes on disk
+          let totalSizeB = 0;
           
-          // Add file sizes if applicable
           const imagePaths = [phone.image, ...(phone.images || []), phone.thumbnail];
           for (const imgP of imagePaths) {
             if (imgP && imgP.startsWith('/uploads/')) {
@@ -300,13 +306,16 @@ async function startServer() {
               }
             }
           }
+
+          const finalJson = JSON.stringify(phone);
+          totalSizeB += Buffer.byteLength(finalJson, 'utf8');
           const sizeKb = Math.round(totalSizeB / 1024);
 
           insert.run(
             phone.id, phone.brand, phone.model, String(phone.price), 
             phone.ram || '', phone.storage || '', phone.condition,
             sizeKb,
-            jsonData
+            finalJson
           );
         }
       })();
@@ -349,16 +358,33 @@ async function startServer() {
       }
     });
   } else {
-    app.use(express.static(path.join(__dirname, 'dist')));
+    const distPath = path.join(rootDir, 'dist');
+    console.log(`[Static] Serving frontend from: ${distPath}`);
+    app.use(express.static(distPath));
     app.get(/.*/, (req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running at:`);
-    console.log(`  > Local:    http://localhost:${port}`);
-    console.log(`  > Network:  http://0.0.0.0:${port} (listening on all interfaces)`);
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`[Server] Listening on port ${port}`);
+    console.log(`[Server] Health check: http://localhost:${port}/api/data`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('[Server] Received SIGTERM. Shutting down gracefully...');
+    server.close(() => {
+      console.log('[Server] Closed out remaining connections.');
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('[Server] Received SIGINT. Shutting down gracefully...');
+    server.close(() => {
+      process.exit(0);
+    });
   });
 }
 
