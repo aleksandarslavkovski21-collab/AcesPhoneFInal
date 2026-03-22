@@ -274,6 +274,11 @@ const DetailView: React.FC<DetailViewProps> = ({ phone, onBack, config }) => {
                     <p className="text-slate-600 whitespace-pre-wrap leading-relaxed font-medium text-sm">
                       {phone.description || "Нема внесен детален опис."}
                     </p>
+                    {phone.sku && (
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">SKU: {phone.sku}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

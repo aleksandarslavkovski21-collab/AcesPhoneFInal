@@ -20,6 +20,7 @@ export function initDB(dbPath: string) {
       ram TEXT NOT NULL,
       storage TEXT NOT NULL,
       condition TEXT NOT NULL,
+      sku TEXT UNIQUE,
       size_kb INTEGER DEFAULT 0,
       data JSON NOT NULL,      -- Stores the full objects to avoid writing 20+ columns for every dynamic field
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -35,6 +36,12 @@ export function initDB(dbPath: string) {
   if (!hasSizeKb) {
     db.exec("ALTER TABLE phones ADD COLUMN size_kb INTEGER DEFAULT 0");
     console.log("[Database] Added size_kb column to phones table.");
+  }
+
+  const hasSku = tableInfo.some(col => col.name === 'sku');
+  if (!hasSku) {
+    db.exec("ALTER TABLE phones ADD COLUMN sku TEXT");
+    console.log("[Database] Added sku column to phones table.");
   }
 
   return db;

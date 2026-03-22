@@ -42,13 +42,13 @@ if (fs.existsSync(OLD_DB_PATH)) {
     // Migrate Phones
     if (oldData.phones && Array.isArray(oldData.phones)) {
       const insertPhone = db.prepare(`
-        INSERT OR REPLACE INTO phones (id, brand, model, price, ram, storage, condition, data)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO phones (id, sku, brand, model, price, ram, storage, condition, data)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       db.transaction(() => {
         for (const phone of oldData.phones) {
           insertPhone.run(
-            phone.id, phone.brand, phone.model, String(phone.price), 
+            phone.id, phone.sku || null, phone.brand, phone.model, String(phone.price), 
             phone.ram || '', phone.storage || '', phone.condition, 
             JSON.stringify(phone)
           );
@@ -122,7 +122,7 @@ async function startServer() {
     const authHeader = req.headers.authorization;
     const expectedToken = 'secret-session-token-' + Buffer.from(String(ADMIN_PASSWORD).trim()).toString('base64').substring(0, 10);
     
-    if (authHeader === `Bearer ${expectedToken}` || req.headers['x-admin-auth'] === 'true') {
+    if (authHeader === `Bearer ${expectedToken}`) {
       next();
     } else {
       console.warn(`[Auth] Unauthorized access attempt to ${req.path} from IP: ${req.ip}`);
@@ -276,8 +276,8 @@ async function startServer() {
       db.transaction(() => {
         db.prepare('DELETE FROM phones').run();
         const insert = db.prepare(`
-          INSERT INTO phones (id, brand, model, price, ram, storage, condition, size_kb, data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO phones (id, sku, brand, model, price, ram, storage, condition, size_kb, data)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const phone of newPhones) {
           // Process images: move Base64 out to files
@@ -312,10 +312,10 @@ async function startServer() {
           const sizeKb = Math.round(totalSizeB / 1024);
 
           insert.run(
-            phone.id, phone.brand, phone.model, String(phone.price), 
+            phone.id, phone.sku || null, phone.brand, phone.model, String(phone.price), 
             phone.ram || '', phone.storage || '', phone.condition,
             sizeKb,
-            finalJson
+            JSON.stringify(phone)
           );
         }
       })();
@@ -323,6 +323,45 @@ async function startServer() {
     } catch (e) {
       console.error('Failed to write phones to sqlite:', e);
       res.status(500).json({ success: false, error: 'Database write failed' });
+    }
+  });
+
+  app.post('/api/generate-skus', requireAuth, (req, res) => {
+    try {
+      const phonesRows = db.prepare(`SELECT id, data FROM phones`).all();
+      const existingSkus = new Set(
+        phonesRows
+          .map((row: any) => JSON.parse(row.data).sku)
+          .filter((sku: string | undefined) => !!sku)
+      );
+
+      let nextSkuNum = 1;
+      const generateUniqueSku = () => {
+        while (true) {
+          const sku = String(nextSkuNum).padStart(3, '0');
+          if (!existingSkus.has(sku)) {
+            existingSkus.add(sku);
+            return sku;
+          }
+          nextSkuNum++;
+        }
+      };
+
+      db.transaction(() => {
+        const update = db.prepare(`UPDATE phones SET sku = ?, data = ? WHERE id = ?`);
+        for (const row of phonesRows as any) {
+          const phone = JSON.parse(row.data);
+          if (!phone.sku) {
+            phone.sku = generateUniqueSku();
+            update.run(phone.sku, JSON.stringify(phone), row.id);
+          }
+        }
+      })();
+
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Failed to generate SKUs:', e);
+      res.status(500).json({ success: false, error: 'SKU generation failed' });
     }
   });
 

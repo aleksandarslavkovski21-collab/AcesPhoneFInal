@@ -22,6 +22,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const [dropTargetIndex, setDropTargetIndex] = useState<{index: number, position: 'before' | 'after'} | null>(null);
   const [newOption, setNewOption] = useState({ brand: '', ram: '', storage: '', location: '', feature: '', specId: '', specLabel: '' });
   const [statusMessage, setStatusMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+  const [showSkuPopup, setShowSkuPopup] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const compressImage = (file: File): Promise<{ original: string, thumbnail: string }> => {
@@ -97,6 +98,40 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
     };
   }, []);
 
+  // Check for missing SKUs
+  React.useEffect(() => {
+    if (isAuthenticated && phones.length > 0) {
+      const missingSku = phones.some(p => !p.sku);
+      if (missingSku) {
+        setShowSkuPopup(true);
+      }
+    }
+  }, [isAuthenticated, phones]);
+
+  const handleGenerateSkus = async () => {
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('pcp_admin_token');
+      const res = await fetch('/api/generate-skus', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        // Refresh data by calling a parent update or just reloading
+        window.location.reload(); 
+      } else {
+        alert('Грешка при генерирање на SKU.');
+      }
+    } catch (e) {
+      alert('Проблем со серверот.');
+    } finally {
+      setIsSubmitting(false);
+      setShowSkuPopup(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try {
       const res = await fetch('/api/auth/google/url');
@@ -145,6 +180,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
   const [formData, setFormData] = useState({
     brand: (config.brands && config.brands[0]) || '',
+    sku: '',
     model: '',
     price: '',
     ram: (config.ramOptions && config.ramOptions[0]) || '',
@@ -396,6 +432,7 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
     setEditingPhoneId(phone.id);
     setFormData({
       brand: phone.brand,
+      sku: phone.sku || '',
       model: phone.model,
       price: phone.price.toString(),
       ram: phone.ram,
@@ -431,7 +468,8 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
   const handleCancelEdit = () => {
     setEditingPhoneId(null);
     setFormData({
-      brand: config.brands[0] || '', model: '', price: '', 
+      brand: config.brands[0] || '', sku: '', model: '', 
+      price: '', 
       ram: config.ramOptions[0] || '', storage: config.storageOptions[0] || '', screen: '', condition: 'New', description: '',
       customNote: '',
       unlocked: true,
@@ -450,10 +488,23 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
 
   const handleSubmitListing = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Uniqueness Check
+    if (formData.sku) {
+      const isDuplicate = phones.some(p => p.sku === formData.sku && p.id !== editingPhoneId);
+      if (isDuplicate) {
+        setStatusMessage({ text: `ГРЕШКА: SKU "${formData.sku}" веќе се користи!`, type: 'error' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => setStatusMessage(null), 5000);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     const commonData = {
       brand: formData.brand,
+      sku: formData.sku,
       model: formData.model,
       price: formData.price,
       ram: formData.ram,
@@ -654,9 +705,15 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="phone-model" className="block text-[12px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Модел</label>
-                  <input id="phone-model" type="text" placeholder="пр. P60 Pro" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-blue-300 outline-none w-full font-bold" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})}/>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="phone-sku" className="block text-[12px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">SKU (3 цифри)</label>
+                    <input id="phone-sku" type="text" placeholder="пр. 001" className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-blue-300 outline-none w-full font-bold" value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value.substring(0, 5)})}/>
+                  </div>
+                  <div>
+                    <label htmlFor="phone-model" className="block text-[12px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Модел</label>
+                    <input id="phone-model" type="text" placeholder="пр. P60 Pro" required className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-sm focus:ring-2 focus:ring-blue-300 outline-none w-full font-bold" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})}/>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
@@ -889,7 +946,10 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                       className="w-20 h-20 rounded-2xl object-cover border border-slate-200 bg-white shadow-sm" 
                     />
                     <div className="flex-grow">
-                      <h4 className="font-black text-slate-900 text-lg">{p.brand} {p.model}</h4>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-black text-slate-900 text-lg">{p.brand} {p.model}</h4>
+                        {p.sku && <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 uppercase tracking-widest shrink-0">SKU: {p.sku}</span>}
+                      </div>
                       <div className="flex items-center gap-4 mt-1">
                         <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 uppercase tracking-widest">{p.price.toLocaleString()} МКД</span>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -1038,6 +1098,40 @@ const Dashboard: React.FC<DashboardProps> = ({ phones, onUpdate, config, onConfi
                 ))}
               </div>
             </section>
+          </div>
+        </div>
+      )}
+      {/* SKU Generator Popup */}
+      {showSkuPopup && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-md bg-slate-900/40 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 text-center animate-in zoom-in-95 duration-300">
+            <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center text-4xl mx-auto mb-8 shadow-inner border border-blue-100 animate-bounce">
+              🔢
+            </div>
+            <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Недостасуваат SKU кодови!</h3>
+            <p className="text-slate-500 font-medium mb-10 leading-relaxed">
+              Пронајдовме телефони без SKU кодови. За подобра организација и пребарување, препорачуваме автоматско генерирање на 3-цифрени кодови за сите нив.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={handleGenerateSkus}
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>Генерирај SKU за сите ✨</>
+                )}
+              </button>
+              <button 
+                onClick={() => setShowSkuPopup(false)}
+                className="w-full bg-slate-50 text-slate-400 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:text-slate-600 transition-colors"
+              >
+                Подоцна
+              </button>
+            </div>
           </div>
         </div>
       )}

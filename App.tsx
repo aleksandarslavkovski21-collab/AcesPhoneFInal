@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PhoneModel, Filters, AppConfig } from './types';
 import { getAllPhones, INITIAL_CONFIG } from './data';
 import CatalogView from './components/CatalogView';
@@ -28,6 +28,8 @@ const App: React.FC = () => {
     location: "",
     feature: ""
   });
+
+  const skipNextSave = useRef(true);
 
   // Fetch data on mount
   useEffect(() => {
@@ -64,15 +66,26 @@ const App: React.FC = () => {
   // Save phones when changed
   useEffect(() => {
     if (!hasLoaded || isLoading) return;
+    
+    // Skip the first save event which is triggered by initial data fetch
+    if (skipNextSave.current) {
+      // We don't reset skipNextSave here because we have two effects 
+      // check if both have had a chance to run or use a more specific guard
+      return;
+    }
+
     const savePhones = async () => {
       try {
         const token = localStorage.getItem('pcp_admin_token');
+        const isAuth = localStorage.getItem('pcp_admin_auth') === 'true';
+        
+        if (!isAuth || !token) return;
+
         await fetch('/api/phones', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-            'x-admin-auth': localStorage.getItem('pcp_admin_auth') === 'true' ? 'true' : 'false'
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(phones)
         });
@@ -86,15 +99,28 @@ const App: React.FC = () => {
   // Save config when changed
   useEffect(() => {
     if (!hasLoaded || isLoading) return;
+
+    if (skipNextSave.current) {
+      // After both potential initial triggers, we can allow future saves
+      // Small timeout to ensure both effects have checked the ref
+      setTimeout(() => {
+        skipNextSave.current = false;
+      }, 100);
+      return;
+    }
+
     const saveConfig = async () => {
       try {
         const token = localStorage.getItem('pcp_admin_token');
+        const isAuth = localStorage.getItem('pcp_admin_auth') === 'true';
+
+        if (!isAuth || !token) return;
+
         await fetch('/api/config', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-            'x-admin-auth': localStorage.getItem('pcp_admin_auth') === 'true' ? 'true' : 'false'
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(config)
         });

@@ -1,6 +1,7 @@
 
 export interface PhoneModel {
   id: string;
+  sku?: string;
   model: string;
   price: number | string;
   ram: string;
