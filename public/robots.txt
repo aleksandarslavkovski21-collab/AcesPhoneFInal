@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# Specifically tell the Google Image bot to ignore your phone uploads
+User-agent: Googlebot-Image
+Disallow: /uploads/
+
 Sitemap: https://acesphones.com/sitemap.xml
